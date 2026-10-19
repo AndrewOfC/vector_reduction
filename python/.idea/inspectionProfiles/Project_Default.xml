@@ -1,0 +1,46 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="Eslint" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <list>
+          <option value="aws-xray-sdk" />
+          <option value="aws_advanced_python_wrapper" />
+          <option value="boto3" />
+          <option value="boto3-stubs" />
+          <option value="botocore" />
+          <option value="certifi" />
+          <option value="charset-normalizer" />
+          <option value="idna" />
+          <option value="mysql-connector-python" />
+          <option value="opentelemetry-api" />
+          <option value="opentelemetry-sdk" />
+          <option value="opentelemetry-semantic-conventions" />
+          <option value="postgres" />
+          <option value="psycopg" />
+          <option value="psycopg2-pool" />
+          <option value="requests" />
+          <option value="ResourceBundle" />
+          <option value="s3transfer" />
+          <option value="SQLAlchemy" />
+          <option value="toml" />
+          <option value="types-aws-xray-sdk" />
+          <option value="wrapt" />
+          <option value="CppHeaderParser" />
+          <option value="Jinja2" />
+          <option value="MarkupSafe" />
+          <option value="pkg_resources" />
+          <option value="ply" />
+          <option value="pyaml" />
+          <option value="pyserial" />
+          <option value="PyYAML" />
+          <option value="PyQt5" />
+          <option value="PyQt5-Qt5" />
+          <option value="PyQt5-sip" />
+          <option value="urllib3" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
