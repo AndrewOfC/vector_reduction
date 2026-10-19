@@ -1,0 +1,25 @@
+
+
+#include <immintrin.h>
+
+double reduce{{"%03d"|format(n*8)}}(double *src, double initial)
+{
+{%- for i in range(n) %}
+    __m512d r{{"%03d" | format(i)}} = _mm512_loadu_pd(src+{{i*8}});
+{%- endfor %}
+
+{%- for j in steps %}
+{% for i in range(j) %}
+    // r{{"%03d" | format(i)}} += r{{"%03d" | format(i+j)}} ;
+    r{{"%03d" | format(i)}} = _mm512_add_pd(r{{"%03d" | format(i)}}, r{{"%03d" | format(i+j)}});
+{%- endfor %}
+{%- endfor %}
+
+    double result[8];
+
+    _mm512_storeu_pd(result, r000);
+    for( int i = 0 ; i < 8 ; i++ )
+        initial += result[i] ;
+
+    return initial ;
+}

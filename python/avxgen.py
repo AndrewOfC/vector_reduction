@@ -2,75 +2,29 @@ import argparse
 import sys
 
 import jinja2 as j2
+from jinja2 import FileSystemLoader, Environment
 
-TEMPLATE2 ="""
+ROOT_TEMPLATE = """
 #include <cstdint>
+#include <iostream>
+
+#if defined(__AVX512F__)
 #include <immintrin.h>
-double reduce{{"%03d"|format(n*8)}}(double *src, double initial)
+#elif defined(__ARM_NEON__) || defined(__ARM_NEON)
+#include <arm_neon.h>
+#else
+#error "Unsupported CPU"
+#endif
+
+double reduce{{"%03d"|format(n*8)}}(double *src, size_t len, double initial /* = 0 */)
 {
-
-   register uint64_t r8_val asm("r8");
-   __asm__ __volatile__ (
-       "movq %1, %0"
-       : "=r" (r8_val)  // Output: write to the register bound to r8_val
-       : "m" (src)     // Input: the pointer address
-   );
-    /*
-     * load
-     */
-{%- for i in range(n) %}
-   asm volatile( 
-   "vmovapd {{i*64}}(%%r8), %%zmm{{i}}\\n\\t" : "=r" (src) : : "zmm{{i}}"
-   ) ;
-{%- endfor %}
-
-
-{%- for j in steps %}
-{% for i in range(j) %}     
-     asm(
-        "vaddpd %zmm{{i}}, %zmm{{i+j}}, %zmm{{i}}"
-     ) ;
-{%- endfor %}
-{%- endfor %}
-
-    double result[8];
-    
-    asm ( 
-        "vmovapd %%zmm0, %0\\n\\t" : "=m" (result)
-   ) ;
-    
-    for( int i = 0 ; i < 8 ; i++ )
-        initial += result[i] ;
-
-     
-    return initial ;
-}
-"""
-
-TEMPLATE = """
-
-#include <immintrin.h>
-
-double reduce{{"%03d"|format(n*8)}}(double *src, double initial)
-{
-{%- for i in range(n) %}
-    __m512d r{{"%03d" | format(i)}} = _mm512_loadu_pd(src+{{i*8}});
-{%- endfor %}
-
-{%- for j in steps %}
-{% for i in range(j) %}
-    // r{{"%03d" | format(i)}} += r{{"%03d" | format(i+j)}} ;
-    r{{"%03d" | format(i)}} = _mm512_add_pd(r{{"%03d" | format(i)}}, r{{"%03d" | format(i+j)}});
-{%- endfor %}
-{%- endfor %}
-
-    double result[8];
-    
-    _mm512_storeu_pd(result, r000);
-    for( int i = 0 ; i < 8 ; i++ )
-        initial += result[i] ;
-
-    return initial ;
+   {%if avx512 %}
+   {% include "avx512.jinja2" %}
+   {% elif neon %}
+   {% include "neon.jinja2" %}
+   {% else %}
+#error "No vectorization defined"
+   {% endif %}   
 }
 """
 
@@ -78,12 +32,18 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-o", "--output")
-    parser.add_argument("--n", type=int, default=32)
+    parser.add_argument("-n", type=int, default=32)
     parser.add_argument("-v", "--verbose", action="store_true")
+    parser.add_argument("--avx512", action="store_true")
+    parser.add_argument("--neon", action="store_true")
     args = parser.parse_args()
 
+    file_loader = FileSystemLoader('.')
 
-    template = j2.Template(TEMPLATE2)
+    # 2. Initialize the Jinja environment
+    env = Environment(loader=file_loader)
+
+    template = env.from_string(ROOT_TEMPLATE)
 
     i = args.n
     steps = []
@@ -96,7 +56,10 @@ def main():
     else:
         outs = open(args.output, "w")
 
-    text = template.render(n=args.n, steps=steps)
+    text = template.render(n=args.n,
+                           steps=steps,
+                           neon=args.neon,
+                           avx512=args.avx512)
     if args.verbose:
         print(text)
     if args.output:

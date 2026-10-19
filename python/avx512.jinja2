@@ -1,0 +1,39 @@
+   register double *srcPtr asm("r8") = src ;
+   asm volatile (
+       "movq %1, %0"
+       : "=r" (srcPtr)  // Output: write to the register bound to srcPtr
+       : "m" (src)     // Input: the pointer address
+   );
+
+   while( len > 0 ) {
+
+        /*
+         * load
+         */
+    {%- for i in range(n) %}
+       asm volatile(
+       "vmovapd {{i*64}}(%%r8), %%zmm{{i}}\n\t" : : : "zmm{{i}}"
+       ) ;
+    {%- endfor %}
+
+    {%- for j in steps %}
+    {% for i in range(j) %}
+         asm volatile(
+            "vaddpd %%zmm{{i}}, %%zmm{{i+j}}, %%zmm{{i}}" : "=r" (src) : : "zmm{{i}}"
+         ) ;
+    {%- endfor %}
+    {%- endfor %}
+
+        __m512d temp ;
+        asm volatile(
+            "vmovapd %%zmm0, %0\n\t" : "=m" (temp)
+       ) ;
+      initial += _mm512_reduce_add_pd(temp) ;
+      srcPtr += 256  ;
+      asm volatile("" : "+r" (srcPtr));  // keeps srcPtr from being optimized away
+
+      len -= 256 ;
+
+    }
+
+    return initial ;

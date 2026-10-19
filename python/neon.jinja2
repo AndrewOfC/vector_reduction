@@ -1,0 +1,22 @@
+
+
+    while( len > 0 ) {
+        {%- for i in range(n) %}
+        float64x2_t r{{"%03d" | format(i)}} = vld1q_f64(&src[{{i*2}}]);
+        {%- endfor %}
+
+        {%- for j in steps %}
+        {% for i in range(j) %}
+        r{{"%03d" | format(i)}} = vaddq_f64(r{{"%03d" | format(i)}}, r{{"%03d" | format(i+j)}});
+        {%- endfor %}
+        {%- endfor %}
+
+        double result[2] ;
+        vst1q_f64(&result[0], r000);
+        initial += (result[0] + result[1]) ;
+        len -= 64 ;
+        src += 64 ;
+    }
+
+
+    return 0 ;
