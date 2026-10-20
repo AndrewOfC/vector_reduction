@@ -15,3 +15,4 @@ T genericSum(T *src, size_t len, T initial)
 }
 
 template double genericSum<double>(double *src, size_t len, double initial);
+template float genericSum<float>(float *src, size_t len, float initial);

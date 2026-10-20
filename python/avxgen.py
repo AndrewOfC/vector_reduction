@@ -47,7 +47,9 @@ def main():
 
     i = args.n
     steps = []
-    while i >= 1:
+    if args.avx512:
+        i //= 2 # we're going to handle the first 'step' differently
+    while i >= 2:
         i //= 2
         steps.append(i)
 

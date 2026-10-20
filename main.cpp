@@ -18,11 +18,9 @@ typedef std::vector<double, boost::alignment::aligned_allocator<double, 64>> vec
 
 double reduce256(double *src, size_t len, double initial = 0.0);
 
-
 bool almostEqualAbsolute(double a, double b, double tolerance = 1e-8) {
     return std::fabs(a - b) <= tolerance;
 }
-
 
 int main(int argc, char *argv[])
 {
@@ -99,7 +97,7 @@ int main(int argc, char *argv[])
     auto std_elapsed = timer3.elapsed().user    ;
     cout << "std Result: " << check_result << "  " << timer3.format(5, formatt) << endl;
     /*
-     * avx/nEON
+     * avx/NEON
      */
     cpu_timer timer1;
     for (unsigned int i = 0; i < iterations; ++i)

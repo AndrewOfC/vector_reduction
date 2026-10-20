@@ -1,4 +1,5 @@
    register double *srcPtr asm("r8") = src ;
+   register __m512d final asm ("zmm0") = {0,0,0,0,0,0,0,0} ;
    asm volatile (
        "movq %1, %0"
        : "=r" (srcPtr)  // Output: write to the register bound to srcPtr
@@ -6,34 +7,31 @@
    );
 
    while( len > 0 ) {
-
         /*
          * load
          */
-    {%- for i in range(n) %}
+    {%- for i in range(0,n//2) %}
        asm volatile(
-       "vmovapd {{i*64}}(%%r8), %%zmm{{i}}\n\t" : : : "zmm{{i}}"
+       "vmovapd {{i*2*64}}(%%r8), %%zmm{{i}}\n\t"
+       "vmovapd {{(i*2+1)*64}}(%%r8), %%zmm{{i+16}}\n\t"
+        "vaddpd %%zmm{{i}}, %%zmm{{i+16}}, %%zmm{{i}}\n\t"
+        : : : "zmm{{i}}", "zmm{{i+16}}"
        ) ;
     {%- endfor %}
 
     {%- for j in steps %}
-    {% for i in range(j) %}
+        //
          asm volatile(
-            "vaddpd %%zmm{{i}}, %%zmm{{i+j}}, %%zmm{{i}}" : "=r" (src) : : "zmm{{i}}"
+    {%- for i in range(j) %}
+            "vaddpd %%zmm{{i}}, %%zmm{{i+j}}, %%zmm{{i}}\n\t"
+    {%- endfor %}
+             : : : {% for i in range(j) %}"zmm{{i}}"{% if not loop.last %},{% endif %}{% endfor %}
          ) ;
     {%- endfor %}
-    {%- endfor %}
 
-        __m512d temp ;
-        asm volatile(
-            "vmovapd %%zmm0, %0\n\t" : "=m" (temp)
-       ) ;
-      initial += _mm512_reduce_add_pd(temp) ;
+        initial += _mm512_reduce_add_pd(final) ;
+      len -= 256 ;
       srcPtr += 256  ;
       asm volatile("" : "+r" (srcPtr));  // keeps srcPtr from being optimized away
-
-      len -= 256 ;
-
     }
-
     return initial ;
