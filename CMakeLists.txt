@@ -34,15 +34,16 @@ if( IS_AVX )
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx512f -mavx512vl")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}     -mavx512f -mavx512vl")
 elseif (IS_NEON)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}") # todo support for rpi/linux platforms
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}") # todo support for rpico platforms
 else ()
     message(FATAL_ERROR "unsupported architecture (platforms available AVX-512, NEON")
 endif ()
 
 add_library(vector_reduce vector_reduce_double.c
-        vector_reduce_float.c
-        vector_reduce_int32.c
-        vector_reduce_int64.c )
+         vector_reduce_float.c
+         vector_reduce_int32.c
+         vector_reduce_int64.c
+)
 ##
 ##
 ##
@@ -55,4 +56,4 @@ add_executable(redux main.cpp
 target_link_libraries(redux PRIVATE vector_reduce Boost::program_options Boost::timer)
 
 add_executable(unittests unittests.cpp)
-target_link_libraries(unittests PRIVATE vector_reduce GTest::GTest GTest::Main)
+target_link_libraries(unittests PRIVATE vector_reduce Boost::timer GTest::GTest GTest::Main)

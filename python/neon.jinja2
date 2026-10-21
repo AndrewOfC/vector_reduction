@@ -11,11 +11,14 @@
         {%- endfor %}
         {%- endfor %}
 
-        {{ p.DTYPE }} result[2] ;
+        {{ p.DTYPE }} result[{{ p.STRIDE }}] ;
         {{ p.EXTRACT }}(&result[0], r000);
-        initial += (result[0] + result[1]) ;
-        len -= {{ p.step }} ;
-        src += {{ p.step }} ;
+        initial += {% for i in range(p.STRIDE) -%}
+                    result[{{ i }}] {% if not loop.last %}+{% endif %}
+                    {%- endfor %} ;
+        len -= {{ n }} * {{ p.STRIDE }} ;
+        src += {{ n }} * {{ p.STRIDE }}  ;
+
     }
 
 

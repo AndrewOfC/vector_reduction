@@ -19,8 +19,43 @@ class NEONProfileDouble(VectorProfile):
         self.DTYPE = "double"
         self.LOAD = "vld1q_f64"
         self.ADD = "vaddq_f64"
-        self.EXTRACT = "vst1q_f64"
-        self.STRIDE = 2
+        self.EXTRACT = "vgetq_lane_f64"
+        self.STRIDE = 128//(sizeof(c_double)*8)
+        self.filename = "vector_reduce_double.c"
+
+class NEONProfileFloat(VectorProfile):
+    def __init__(self, n_registers):
+        super().__init__("NEON", n_registers=n_registers)
+        self.VTYPE = "float32x4_t"
+        self.DTYPE = "float"
+        self.LOAD = "vld1q_f32"
+        self.ADD = "vaddq_f32"
+        self.EXTRACT = "vgetq_lane_f32"
+        self.STRIDE = 128//(sizeof(c_float)*8)
+        self.filename = "vector_reduce_float.c"
+
+class NEONProfileInt32(VectorProfile):
+    def __init__(self, n_registers):
+        super().__init__("NEON", n_registers=n_registers)
+        self.VTYPE = "int32x4_t"
+        self.DTYPE = "int32_t"
+        self.LOAD = "vld1q_s32"
+        self.ADD = "vaddq_s32"
+        self.EXTRACT = "vgetq_lane_s32"
+        self.STRIDE = 128//(sizeof(c_int32)*8)
+        self.filename = "vector_reduce_int32.c"
+
+
+class NEONProfileInt64(VectorProfile):
+    def __init__(self, n_registers):
+        super().__init__("NEON", n_registers=n_registers)
+        self.VTYPE = "int64x2_t"
+        self.DTYPE = "int64_t"
+        self.LOAD = "vld1q_s64"
+        self.ADD = "vaddq_s64"
+        self.EXTRACT = "vgetq_lane_s64"
+        self.STRIDE = 128 // (sizeof(c_int64) * 8)
+        self.filename = "vector_reduce_int64.c"
 
 
 class AVX512ProfileDouble(VectorProfile):
@@ -117,6 +152,9 @@ ROOT_TEMPLATE = """
 
 NEONTypes = {
     "double": NEONProfileDouble,
+    "float": NEONProfileFloat,
+   "int32_t": NEONProfileInt32,
+    "int64_t": NEONProfileInt64,
 }
 
 AVX512Types = {
@@ -158,15 +196,20 @@ def main():
         steps.append(i)
         i //= 2
 
-    for key, clazz in AVX512Types.items():
+    if args.avx512:
+        profile_types = AVX512Types
+    elif args.neon:
+        profile_types = NEONTypes
+
+    for key, clazz in profile_types.items():
         profile = clazz(args.n)
         path = os.path.join(args.output_dir, profile.filename)
         outs = open(path, "w")
 
         text = template.render(n=profile.n_registers,
                                p=profile,
-                               avx_template=args.template_avx,
-                               neon_template=args.template_neon,
+                               avx_template="intrinsics.jinja2",
+                               neon_template="intrinsics.jinja2",
                                steps=steps,
                                neon=args.neon,
                                avx512=args.avx512)

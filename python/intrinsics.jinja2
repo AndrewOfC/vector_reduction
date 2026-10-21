@@ -13,7 +13,15 @@
         {%- endfor %}
         {%- endfor %}
 
+        {% if avx512 -%}
         initial += {{ p.REDUCE }}(r000) ;
+        {% endif -%}
+        {% if neon %}
+        initial += {% for i in range(p.STRIDE) -%}
+        {{ p.EXTRACT }}(r000, {{ i }}) {% if not loop.last %}+ {% endif %}
+                    {%- endfor %};
+        {% endif %}
+
         len -= {{ n }} * {{ p.STRIDE }} ;
         src += {{ n }} * {{ p.STRIDE }}  ;
     } // while

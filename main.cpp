@@ -20,7 +20,7 @@ bool almostEqualAbsolute(T a, T b, T tolerance = 5e-7) {
     return std::fabs(a - b) <= tolerance;
 }
 
-typedef float target_type ;
+typedef int32_t target_type ;
 typedef std::vector<target_type, boost::alignment::aligned_allocator<target_type, 64>> vector_aligned64_t;
 
 int main(int argc, char *argv[])
@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
 
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_real_distribution<target_type> dist(-1000.0, 1000.0);
+    std::uniform_real_distribution<target_type> dist(-1000, 1000);
 
     vector_aligned64_t data(count);
     if ( ! simple )
