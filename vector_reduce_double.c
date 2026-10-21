@@ -1,6 +1,6 @@
 
-#include <cstdint>
-#include <iostream>
+#include <stddef.h>
+#include "vector_reduce.h"
 
 #if defined(__AVX512F__)
 #include <immintrin.h>
@@ -10,12 +10,12 @@
 #error "Unsupported CPU"
 #endif
 
-double vector_reduce(double *src, size_t len, double initial /* = 0 */)
+double vector_reduce_double(const double *src, size_t len, double initial /* = 0 */)
 {
     /*
      * 
      */
-    while( len >= 256 ) {
+    while( len >= 32 * 8 ) {
         __m512d r000 = _mm512_loadu_pd(src+0);
         __m512d r001 = _mm512_loadu_pd(src+8);
         __m512d r002 = _mm512_loadu_pd(src+16);
@@ -86,13 +86,13 @@ double vector_reduce(double *src, size_t len, double initial /* = 0 */)
         r000 = _mm512_add_pd(r000, r001);
 
         initial += _mm512_reduce_add_pd(r000) ;
-        len -= 256 ;
-        src += 256  ;
+        len -= 32 * 8 ;
+        src += 32 * 8  ;
     } // while
     /*
      * 
      */
-    while( len >= 128 ) {
+    while( len >= 16 * 8 ) {
         __m512d r000 = _mm512_loadu_pd(src+0);
         __m512d r001 = _mm512_loadu_pd(src+8);
         __m512d r002 = _mm512_loadu_pd(src+16);
@@ -130,13 +130,13 @@ double vector_reduce(double *src, size_t len, double initial /* = 0 */)
         r000 = _mm512_add_pd(r000, r001);
 
         initial += _mm512_reduce_add_pd(r000) ;
-        len -= 128 ;
-        src += 128  ;
+        len -= 16 * 8 ;
+        src += 16 * 8  ;
     } // while
     /*
      * 
      */
-    while( len >= 64 ) {
+    while( len >= 8 * 8 ) {
         __m512d r000 = _mm512_loadu_pd(src+0);
         __m512d r001 = _mm512_loadu_pd(src+8);
         __m512d r002 = _mm512_loadu_pd(src+16);
@@ -157,13 +157,13 @@ double vector_reduce(double *src, size_t len, double initial /* = 0 */)
         r000 = _mm512_add_pd(r000, r001);
 
         initial += _mm512_reduce_add_pd(r000) ;
-        len -= 64 ;
-        src += 64  ;
+        len -= 8 * 8 ;
+        src += 8 * 8  ;
     } // while
     /*
      * 
      */
-    while( len >= 32 ) {
+    while( len >= 4 * 8 ) {
         __m512d r000 = _mm512_loadu_pd(src+0);
         __m512d r001 = _mm512_loadu_pd(src+8);
         __m512d r002 = _mm512_loadu_pd(src+16);
@@ -175,31 +175,31 @@ double vector_reduce(double *src, size_t len, double initial /* = 0 */)
         r000 = _mm512_add_pd(r000, r001);
 
         initial += _mm512_reduce_add_pd(r000) ;
-        len -= 32 ;
-        src += 32  ;
+        len -= 4 * 8 ;
+        src += 4 * 8  ;
     } // while
     /*
      * 
      */
-    while( len >= 16 ) {
+    while( len >= 2 * 8 ) {
         __m512d r000 = _mm512_loadu_pd(src+0);
         __m512d r001 = _mm512_loadu_pd(src+8);
         
         r000 = _mm512_add_pd(r000, r001);
 
         initial += _mm512_reduce_add_pd(r000) ;
-        len -= 16 ;
-        src += 16  ;
+        len -= 2 * 8 ;
+        src += 2 * 8  ;
     } // while
     /*
      * 
      */
-    while( len >= 8 ) {
+    while( len >= 1 * 8 ) {
         __m512d r000 = _mm512_loadu_pd(src+0);
 
         initial += _mm512_reduce_add_pd(r000) ;
-        len -= 8 ;
-        src += 8  ;
+        len -= 1 * 8 ;
+        src += 1 * 8  ;
     } // while
 
     // clean up on aisle 3

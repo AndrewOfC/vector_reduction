@@ -2,20 +2,20 @@
     /*
      * 
      */
-    while( len >= {{ n*8 }} ) {
+    while( len >= {{ n }} * {{ p.STRIDE }} ) {
         {%- for i in range(n) %}
-        __m512d r{{"%03d" | format(i)}} = _mm512_loadu_pd(src+{{i*8}});
+        {{ p.VTYPE }} r{{"%03d" | format(i)}} = {{ p.LOAD }}(src+{{ i*p.STRIDE }});
         {%- endfor %}
 
         {%- for j in steps[loop.index:] %}
         {% for i in range(j) %}
-        r{{"%03d" | format(i)}} = _mm512_add_pd(r{{"%03d" | format(i)}}, r{{"%03d" | format(i+j)}});
+        r{{"%03d" | format(i)}} = {{ p.ADD }}(r{{"%03d" | format(i)}}, r{{"%03d" | format(i+j)}});
         {%- endfor %}
         {%- endfor %}
 
-        initial += _mm512_reduce_add_pd(r000) ;
-        len -= {{ n*8 }} ;
-        src += {{ n*8 }}  ;
+        initial += {{ p.REDUCE }}(r000) ;
+        len -= {{ n }} * {{ p.STRIDE }} ;
+        src += {{ n }} * {{ p.STRIDE }}  ;
     } // while
 {%- endfor %}
 

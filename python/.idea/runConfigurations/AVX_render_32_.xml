@@ -22,7 +22,7 @@
     <option name="RUN_TOOL" value="" />
     <option name="RUN_AS_SCRIPT" value="false" />
     <option name="SCRIPT_NAME" value="avxgen.py" />
-    <option name="PARAMETERS" value="-n 32 --avx512 -v -o ../redux.cpp" />
+    <option name="PARAMETERS" value="-n 32 --avx512 -v -o .." />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />
     <option name="MODULE_MODE" value="false" />

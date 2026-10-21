@@ -1,6 +1,5 @@
 #include <iomanip>
 #include <iostream>
-#include <numeric>
 #include <random>
 #include <vector>
 #include <boost/range/numeric.hpp>
@@ -8,19 +7,21 @@
 #include <boost/program_options.hpp>
 #include <boost/timer/timer.hpp>
 
+#include "vector_reduce.h"
+
 #include "genericsum.hpp"
 
 namespace po = boost::program_options;
 using namespace std;
 using boost::timer::cpu_timer;
 
-typedef std::vector<double, boost::alignment::aligned_allocator<double, 64>> vector_aligned64_t;
-
-double vector_reduce(double *src, size_t len, double initial = 0.0);
-
-bool almostEqualAbsolute(double a, double b, double tolerance = 5e-7) {
+template<typename T>
+bool almostEqualAbsolute(T a, T b, T tolerance = 5e-7) {
     return std::fabs(a - b) <= tolerance;
 }
+
+typedef float target_type ;
+typedef std::vector<target_type, boost::alignment::aligned_allocator<target_type, 64>> vector_aligned64_t;
 
 int main(int argc, char *argv[])
 {
@@ -58,7 +59,7 @@ int main(int argc, char *argv[])
 
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_real_distribution<double> dist(-1000.0, 1000.0);
+    std::uniform_real_distribution<target_type> dist(-1000.0, 1000.0);
 
     vector_aligned64_t data(count);
     if ( ! simple )
@@ -74,14 +75,14 @@ int main(int argc, char *argv[])
     }
 
     string formatt = "%u" ;
-    double result = 0, check_result = 0 ;
+    target_type result = 0, check_result = 0, initial=0.0 ;
     /*
      * generic
      */
     cpu_timer timer2;
     for (unsigned int i = 0; i < iterations; ++i)
     {
-        result = genericSum(data.data(), count, 0.0);
+        result = genericSum(data.data(), count, initial);
     }
     timer2.stop();
     cout << "generic Result: " << result << "  " << timer2.format(5, formatt) << endl;
@@ -91,7 +92,7 @@ int main(int argc, char *argv[])
     cpu_timer timer3;
     for (unsigned int i = 0; i < iterations; ++i)
     {
-        check_result = boost::accumulate(data, 0.0);
+        check_result = boost::accumulate(data, initial);
     }
     timer3.stop();
     auto std_elapsed = timer3.elapsed().user    ;
