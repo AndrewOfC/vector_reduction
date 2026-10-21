@@ -1,37 +1,27 @@
-   register double *srcPtr asm("r8") = src ;
-   register __m512d final asm ("zmm0") = {0,0,0,0,0,0,0,0} ;
-   asm volatile (
-       "movq %1, %0"
-       : "=r" (srcPtr)  // Output: write to the register bound to srcPtr
-       : "m" (src)     // Input: the pointer address
-   );
+{%- for n in steps %}
+    /*
+     * 
+     */
+    while( len >= {{ n*8 }} ) {
+        {%- for i in range(n) %}
+        __m512d r{{"%03d" | format(i)}} = _mm512_loadu_pd(src+{{i*8}});
+        {%- endfor %}
 
-   while( len > 0 ) {
-        /*
-         * load
-         */
-    {%- for i in range(0,n//2) %}
-       asm volatile(
-       "vmovapd {{i*2*64}}(%%r8), %%zmm{{i}}\n\t"
-       "vmovapd {{(i*2+1)*64}}(%%r8), %%zmm{{i+16}}\n\t"
-        "vaddpd %%zmm{{i}}, %%zmm{{i+16}}, %%zmm{{i}}\n\t"
-        : : : "zmm{{i}}", "zmm{{i+16}}"
-       ) ;
-    {%- endfor %}
+        {%- for j in steps[loop.index:] %}
+        {% for i in range(j) %}
+        r{{"%03d" | format(i)}} = _mm512_add_pd(r{{"%03d" | format(i)}}, r{{"%03d" | format(i+j)}});
+        {%- endfor %}
+        {%- endfor %}
 
-    {%- for j in steps %}
-        //
-         asm volatile(
-    {%- for i in range(j) %}
-            "vaddpd %%zmm{{i}}, %%zmm{{i+j}}, %%zmm{{i}}\n\t"
-    {%- endfor %}
-             : : : {% for i in range(j) %}"zmm{{i}}"{% if not loop.last %},{% endif %}{% endfor %}
-         ) ;
-    {%- endfor %}
+        initial += _mm512_reduce_add_pd(r000) ;
+        len -= {{ n*8 }} ;
+        src += {{ n*8 }}  ;
+    } // while
+{%- endfor %}
 
-        initial += _mm512_reduce_add_pd(final) ;
-      len -= 256 ;
-      srcPtr += 256  ;
-      asm volatile("" : "+r" (srcPtr));  // keeps srcPtr from being optimized away
+    // clean up on aisle 3
+    for( size_t i = 0 ; i < len ; i++, src++ ) {
+        initial += *src ;
     }
+
     return initial ;

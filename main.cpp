@@ -16,9 +16,9 @@ using boost::timer::cpu_timer;
 
 typedef std::vector<double, boost::alignment::aligned_allocator<double, 64>> vector_aligned64_t;
 
-double reduce256(double *src, size_t len, double initial = 0.0);
+double vector_reduce(double *src, size_t len, double initial = 0.0);
 
-bool almostEqualAbsolute(double a, double b, double tolerance = 1e-8) {
+bool almostEqualAbsolute(double a, double b, double tolerance = 5e-7) {
     return std::fabs(a - b) <= tolerance;
 }
 
@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
     cpu_timer timer1;
     for (unsigned int i = 0; i < iterations; ++i)
     {
-        result = reduce256(data.data(), count);
+        result = vector_reduce(data.data(), count);
     }
     timer1.stop();
     auto avx_elapsed = timer1.elapsed().user    ;

@@ -28,7 +28,7 @@ check_cxx_source_compiles("
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -Werror")
 if( IS_AVX )
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx512f")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx512f -mavx512vl")
 elseif (IS_NEON)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}") # todo support for rpi/linux platforms
 else ()
