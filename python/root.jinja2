@@ -1,0 +1,25 @@
+#include <stddef.h>
+#include "vector_reduce.h"
+
+#if defined(__AVX512F__)
+#include <immintrin.h>
+#elif defined(__ARM_NEON__) || defined(__ARM_NEON)
+#include <arm_neon.h>
+#else
+#error "Unsupported CPU"
+#endif
+
+{{DTYPE}} vector_reduce_{{ DTYPE | replace("_t", "") }}(const {{DTYPE}} *src, size_t len, {{DTYPE}} initial /* = 0 */)
+{
+#if defined(__AVX512F__)
+{%- with avx512=True, p=avx_profile -%}
+{%- include intrinsics_template -%}
+{%-endwith %}
+#elif defined(__ARM_NEON__) || defined(__ARM_NEON)
+{%- with p=neon_profile, neon=True -%}
+{%- include intrinsics_template -%}
+{%-endwith %}
+#else
+#error "Unsupported CPU or no vectorization defined"
+#endif
+}

@@ -38,3 +38,34 @@ int16_t reduce_add_epi16_tree(__m512i v) {
 
 
 ```
+
+# Benchmarking
+
+| Platform                        | Speedup   |
+|---                              |---        |
+| i9-11950H                       | 5-8x      |
+| Apple M4                        | 5-8x      |
+| Raspberry Pi 4 Model B          | 1.04x     |
+
+
+
+# Setup
+
+## Gtest
+
+```bash
+git clone https://github.com/google/googletest.git
+cd googletest
+git checkout v1.18.0
+mkdir build
+cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make -j `nproc`
+sudo make install
+```
+
+## Boost
+
+```bash
+sudo apt install libboost-all-dev
+```

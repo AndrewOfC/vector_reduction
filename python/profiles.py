@@ -1,9 +1,6 @@
-import argparse
-import os
-import sys
+
 from ctypes import sizeof, c_double, c_float, c_byte, c_int8, c_int16, c_int32, c_int64
 
-from jinja2 import FileSystemLoader, Environment
 
 class VectorProfile(object):
     def __init__(self, name, n_registers=32):
@@ -126,30 +123,6 @@ class AVX512ProfileInt64(VectorProfile):
         self.STRIDE = 512 // (sizeof(c_int64) * 8)
         self.filename = "vector_reduce_int64.c"
 
-ROOT_TEMPLATE = """
-#include <stddef.h>
-#include "vector_reduce.h"
-
-#if defined(__AVX512F__)
-#include <immintrin.h>
-#elif defined(__ARM_NEON__) || defined(__ARM_NEON)
-#include <arm_neon.h>
-#else
-#error "Unsupported CPU"
-#endif
-
-{{p.DTYPE}} vector_reduce_{{ p.DTYPE | replace("_t", "") }}(const {{p.DTYPE}} *src, size_t len, {{p.DTYPE}} initial /* = 0 */)
-{
-   {%- if avx512 -%}
-   {%- include avx_template -%}
-   {%- elif neon -%}
-   {%- include neon_template -%}
-   {%- else -%}
-#error "No vectorization defined"
-   {%- endif %}   
-}
-"""
-
 NEONTypes = {
     "double": NEONProfileDouble,
     "float": NEONProfileFloat,
@@ -166,59 +139,4 @@ AVX512Types = {
     "int64_t": AVX512ProfileInt64,
 }
 
-def main():
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-o", "--output_dir", default=".", help="Output directory")
-    parser.add_argument("-n", type=int, default=32)
-    parser.add_argument("-v", "--verbose", action="store_true")
-    parser.add_argument("--avx512", action="store_true")
-    parser.add_argument("--neon", action="store_true")
-    parser.add_argument("--vector-type", default="double", choices=["double", "float"], help="Vector type for AVX512 and NEON vectorization")
-    parser.add_argument("--template-avx", default="avx512.jinja2", help="Template file for AVX512 vectorization")
-    parser.add_argument("--template-neon", default="neon.jinja2", help="Template file for NEON vectorization")
-    args = parser.parse_args()
-
-    file_loader = FileSystemLoader('.')
-
-    # 2. Initialize the Jinja environment
-    env = Environment(loader=file_loader)
-
-    if not args.avx512 and not args.neon:
-        print("No vectorization defined", file=sys.stderr)
-        sys.exit(1)
-
-    template = env.from_string(ROOT_TEMPLATE)
-
-    i = args.n
-    steps = []
-    while i >= 1:
-        steps.append(i)
-        i //= 2
-
-    if args.avx512:
-        profile_types = AVX512Types
-    elif args.neon:
-        profile_types = NEONTypes
-
-    for key, clazz in profile_types.items():
-        profile = clazz(args.n)
-        path = os.path.join(args.output_dir, profile.filename)
-        outs = open(path, "w")
-
-        text = template.render(n=profile.n_registers,
-                               p=profile,
-                               avx_template="intrinsics.jinja2",
-                               neon_template="intrinsics.jinja2",
-                               steps=steps,
-                               neon=args.neon,
-                               avx512=args.avx512)
-        if args.verbose:
-            print(text)
-        outs.write(text)
-
-    return
-
-
-if __name__ == "__main__":
-    main()
+RenderTypes = ["double", "float", "int32_t", "int64_t"]
