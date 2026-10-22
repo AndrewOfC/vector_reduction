@@ -34,7 +34,7 @@ if( IS_AVX )
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx512f -mavx512vl")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}     -mavx512f -mavx512vl")
 elseif (IS_NEON)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}") # todo support for rpico platforms
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 else ()
     message(FATAL_ERROR "unsupported architecture (platforms available AVX-512, NEON")
 endif ()

@@ -20,7 +20,7 @@ bool almostEqualAbsolute(T a, T b, T tolerance = 5e-7) {
     return std::fabs(a - b) <= tolerance;
 }
 
-typedef int32_t target_type ;
+typedef double target_type ;
 typedef std::vector<target_type, boost::alignment::aligned_allocator<target_type, 64>> vector_aligned64_t;
 
 int main(int argc, char *argv[])
