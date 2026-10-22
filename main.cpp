@@ -107,8 +107,8 @@ int main(int argc, char *argv[])
     }
     timer1.stop();
     auto avx_elapsed = timer1.elapsed().user    ;
-    cout << "avx Result: " << result << "  " << timer1.format(5, formatt) << endl;
-    cout << "avx speedup: " << std::fixed << std::setprecision(2) << (double)std_elapsed / (double)avx_elapsed << endl;
+    cout << "vec Result: " << result << "  " << timer1.format(5, formatt) << endl;
+    cout << "vec speedup: " << std::fixed << std::setprecision(2) << (double)std_elapsed / (double)avx_elapsed << endl;
 
     if (!almostEqualAbsolute(result, check_result))
     {

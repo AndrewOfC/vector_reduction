@@ -1,0 +1,29 @@
+
+name: Build and Test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  Build_and_Test:
+    runs-on: ubuntu-24.04-arm
+    container:
+      image: ghcr.io/andrewofc/avxbuild-arm64:latest
+    steps:
+      - name: cpuinfo
+        run: cat /proc/cpuinfo && lscpu
+      - uses: actions/checkout@v4
+      - name: Render
+        working-directory: python
+        run: python3 vector_gen.py
+      - name: Build
+        run: |
+          mkdir -p build
+          cd build
+          cmake -DCMAKE_BUILD_TYPE=Release ..
+          make
+      - name: Run tests
+        run: build/unittests
+      - name: benchmark
+        run: build/redux -c 1000 -i 1000

@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/avxredux.iml" filepath="$PROJECT_DIR$/.idea/avxredux.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/redux.iml" filepath="$PROJECT_DIR$/.idea/redux.iml" />
     </modules>
   </component>
