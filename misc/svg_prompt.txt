@@ -1,0 +1,7 @@
+
+
+Produce an SVG graphic of 32 registers, labled r0-r31, being summed in pairs to 16 registers r0-r15 in one row
+then those 16 registers are summed in pairs to 8 registers r0-r7 in the next row,
+then those 8 registers are summed in pairs to 4 registers r0-r3, in the next row,
+then those 4 registers are summed in pairs to 2 registers r0-r1, in the next row,
+then those 2 registers are summed in pairs to 1 register r0, in the final row.

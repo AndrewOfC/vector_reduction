@@ -8,7 +8,7 @@ find_package(Boost REQUIRED COMPONENTS program_options timer)
 find_package(GTest REQUIRED)
 
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86|X86|amd64|AMD64)")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx512f")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx512f -march=native")
 endif()
 
 check_cxx_source_compiles("
@@ -31,8 +31,8 @@ check_cxx_source_compiles("
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -Werror")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wpedantic -Werror")
 if( IS_AVX )
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx512f -mavx512vl")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}     -mavx512f -mavx512vl")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx512f -mavx512vl -march=native")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}     -mavx512f -mavx512vl -march=native")
 elseif (IS_NEON)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 else ()
@@ -43,14 +43,16 @@ add_library(vector_reduce vector_reduce_double.c
          vector_reduce_float.c
          vector_reduce_int32.c
          vector_reduce_int64.c
+         vector_reduce_simd.cpp
 )
 ##
 ##
 ##
-add_executable(redux main.cpp
+add_executable(redux redux.cpp
         genericsum.cpp
         genericsum.hpp
-        vector_reduce.h)
+        vector_reduce.h
+)
 
 
 target_link_libraries(redux PRIVATE vector_reduce Boost::program_options Boost::timer)
