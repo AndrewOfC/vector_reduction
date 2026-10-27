@@ -53,26 +53,24 @@
 /*
  *  GENERATED CODE.  Do not make permanent modifications here.
  */
-
-#include <experimental/simd>
-#include <iostream>
-
-using namespace std;
+#include "vector_reduce.h"
 namespace stdx = std::experimental;
+
+int Unfolds = {{ regs }} ;
 
 template<typename T>
 T vector_reduce_simd(const T *src, size_t len, T initial /* = 0 */)
 {
-    typedef stdx::native_simd<T> vector_t ;
-    vector_t {% for i in range(regs) %}r{{"%02d" | format(i)}}{% if not loop.last %}, {%endif%}{% endfor %} ;
+    const auto sz = vector_t<T>::size() ;
     {%- for n in steps %}
     /*
      *
      */
-    while( len >= {{ n }} * vector_t::size() ) {
+    while( len >= {{ n }} * sz ) {
+        vector_t<T> {% for i in range(n) %}r{{"%02d" | format(i)}}{% if not loop.last %}, {%endif%}{% endfor %} ;
 
         {%- for i in range(n) %}
-        r{{ "%02d" | format(i) }}.copy_from(&src[{{ i }} * vector_t::size()], stdx::vector_aligned) ;
+        r{{ "%02d" | format(i) }}.copy_from(&src[{{ i }} * sz], stdx::vector_aligned) ;
         {%- endfor %}
 
         {%- for j in steps[loop.index:] %}
@@ -81,10 +79,10 @@ T vector_reduce_simd(const T *src, size_t len, T initial /* = 0 */)
         {%- endfor %}
         {%- endfor %}
 
-        initial += std::experimental::reduce(r00) ;
+        initial += stdx::reduce(r00) ;
 
-        len -= {{ n }} * vector_t::size() ;
-        src += {{ n }} * vector_t::size() ;
+        len -= {{ n }} * sz ;
+        src += {{ n }} * sz ;
     } // while
 
 

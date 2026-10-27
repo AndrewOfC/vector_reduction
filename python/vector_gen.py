@@ -31,6 +31,8 @@ from profiles import NEONTypes, AVX512Types, RenderTypes
 
 def main():
 
+    base = os.path.abspath(os.path.dirname(__file__))
+
     parser = argparse.ArgumentParser()
     parser.add_argument("-o", "--output_dir", default="..", help="Output directory")
     parser.add_argument("-n", type=int, default=32)
@@ -39,7 +41,7 @@ def main():
     parser.add_argument("--intrinsics-template", default="intrinsics.jinja2", help="Template file for vectorization")
     args = parser.parse_args()
 
-    file_loader = FileSystemLoader('.')
+    file_loader = FileSystemLoader(base)
 
     # 2. Initialize the Jinja environment
     env = Environment(loader=file_loader)
@@ -70,15 +72,19 @@ def main():
         outs.write(text)
 
     #experimental simd
-    path = os.path.join(args.output_dir, "vector_reduce_simd.cpp")
 
-    template = env.get_template("gccsimd.jinja2")
+    for jinja_source, outfile in (("gccsimd.jinja2", "vector_reduce_simd.cpp"),
+                                  ("varargsreduce.jinja2", "vector_reduce_varargs.cpp"),
+                                  ("varargsreduce_simd.jinja2", "vector_reduce_varargs_simd.cpp")):
+        path = os.path.join(args.output_dir, outfile)
 
-    text = template.render(regs=args.n,steps=steps)
-    if args.verbose:
-        print(text)
-    outs = open(path, "w")
-    outs.write(text)
+        template = env.get_template(jinja_source)
+
+        text = template.render(regs=args.n,steps=steps)
+        if args.verbose:
+            print(text)
+        outs = open(path, "w")
+        outs.write(text)
     return
 
 

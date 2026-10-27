@@ -54,45 +54,39 @@ void CreateTrivialData(vector_aligned64_t<T>& data, size_t n) {
 }
 
 template<typename T>
+void TrivalTestInner(size_t n) {
+    vector_aligned64_t<T> data;
+    CreateTrivialData(data, n);
+    auto correct = std::reduce(data.begin(), data.end(), static_cast<T>(0));
+    auto check = vector_reduce(data.data(), data.size(), static_cast<T>(0));
+    EXPECT_EQ(correct, check);
+
+    check = vector_reduce_simd(data.data(), data.size(), static_cast<T>(0));
+    EXPECT_EQ(correct, check);
+
+    check = va_reduce(data.data(), data.size(), static_cast<T>(0));
+    EXPECT_EQ(correct, check);
+
+    check = va_reduce_simd(data.data(), data.size(), static_cast<T>(0));
+    EXPECT_EQ(correct, check);
+}
+
+template<typename T>
 void TrivialTest()
 {
     vector_aligned64_t<T> data;
     size_t n = (VECTOR_SIZE_IN_BITS/(sizeof(T)*8))*64;
-    CreateTrivialData(data, n+1);
-
-    auto correct = std::reduce(data.begin(), data.end(), static_cast<T>(0));
-    auto check = vector_reduce(data.data(), data.size(), static_cast<T>(0));
-    EXPECT_EQ(correct, check);
-    check = vector_reduce_simd(data.data(), data.size(), static_cast<T>(0));
-    EXPECT_EQ(correct, check);
-
-    CreateTrivialData(data, n+129);
-    correct = std::reduce(data.begin(), data.end(), static_cast<T>(0));
-    check = vector_reduce(data.data(), data.size(), static_cast<T>(0));
-    EXPECT_EQ(correct, check);
-    check = vector_reduce_simd(data.data(), data.size(), static_cast<T>(0));
-    EXPECT_EQ(correct, check);
-
-    CreateTrivialData(data, n+65);
-    correct = std::reduce(data.begin(), data.end(), static_cast<T>(0));
-    check = vector_reduce(data.data(), data.size(), static_cast<T>(0));
-    EXPECT_EQ(correct, check);
-    check = vector_reduce_simd(data.data(), data.size(), static_cast<T>(0));
-    EXPECT_EQ(correct, check);
-
-    CreateTrivialData(data, n+33);
-    correct = std::reduce(data.begin(), data.end(), static_cast<T>(0));
-    check = vector_reduce(data.data(), data.size(), static_cast<T>(0));
-    EXPECT_EQ(correct, check);
-    check = vector_reduce_simd(data.data(), data.size(), static_cast<T>(0));
-    EXPECT_EQ(correct, check);
-
-    CreateTrivialData(data, n+17);
-    correct = std::reduce(data.begin(), data.end(), static_cast<T>(0));
-    check = vector_reduce(data.data(), data.size(), static_cast<T>(0));
-    EXPECT_EQ(correct, check);
-    check = vector_reduce_simd(data.data(), data.size(), static_cast<T>(0));
-    EXPECT_EQ(correct, check);
+    TrivalTestInner<T>(n+129);
+    TrivalTestInner<T>(n+65);
+    TrivalTestInner<T>(n+33);
+    TrivalTestInner<T>(n+17);
+    TrivalTestInner<T>(511);
+    TrivalTestInner<T>(255);
+    TrivalTestInner<T>(127);
+    TrivalTestInner<T>(63);
+    TrivalTestInner<T>(31);
+    TrivalTestInner<T>(15);
+    TrivalTestInner<T>(7);
 }
 
 TEST(VectorReduceTest, TrivialDouble) {

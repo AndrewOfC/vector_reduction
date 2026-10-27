@@ -28,7 +28,7 @@
 // Created by ANDREW PAGE on 10/19/26.
 //
 
-#include "genericsum.hpp"
+#include "vector_simple.hpp"
 #include <experimental/simd>
 
 using namespace std;
@@ -55,15 +55,19 @@ template<typename T>
 T genericSumSimd(T *src, size_t len, T initial)
 {
     typedef stdx::native_simd<T> vector_t ;
-    vector_t r ;
-    while ( len >= vector_t::size() )
+    vector_t r, vinitial(0) ;
+    size_t n = len / vector_t::size() ;
+//#pragma GCC unroll 4
+    for ( size_t i = 0 ; i < n ; i++ )
     {
         r.copy_from(src, stdx::vector_aligned);
-        initial += stdx::reduce(r);
+        vinitial += r;
         len -= vector_t::size();
         src += vector_t::size();
     }
-    for( size_t i = 0 ; i < len ; i++, src++ ) {
+    initial += stdx::reduce(vinitial) ;
+//#pragma GCC unroll 4
+    for( size_t i = 0 ; i < len % vector_t::size() ; i++, src++ ) {
         initial += *src ;
     }
     return initial;

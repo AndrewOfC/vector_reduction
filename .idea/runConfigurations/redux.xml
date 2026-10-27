@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="redux" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="./redux -C 100 -c 0 -i 1000 -t 5 --double" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="redux" TARGET_NAME="redux" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="redux" RUN_TARGET_NAME="redux">
+    <method v="2">
+      <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+    </method>
+  </configuration>
+</component>
