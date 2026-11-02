@@ -24,139 +24,47 @@
  * SPDX short identifier: MIT
  */
 
+#include "redux.hpp"
+
 #include <iomanip>
 #include <iostream>
 #include <random>
-#include <vector>
-#include <boost/range/numeric.hpp>
-#include <boost/align/aligned_allocator.hpp>
 #include <boost/program_options.hpp>
 #include <boost/timer/timer.hpp>
+#include <boost/json.hpp>
 
 #include "vector_reduce.h"
-
-#include "genericsum.hpp"
 
 namespace po = boost::program_options;
 using namespace std;
 using boost::timer::cpu_timer;
 
-template<typename T>
-bool almostEqualAbsolute(T a, T b, T tolerance = 5e-7) {
-    return std::fabs(a - b) <= tolerance;
-}
-
-template<typename T>
-using vector_aligned64_t = std::vector<T, boost::alignment::aligned_allocator<T, 64>> ;
-
-template<typename T>
-void filldata(vector_aligned64_t<T>& data, size_t size, bool simple)
-{
-    data.resize(size);
-    if (!simple)
-    {
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::uniform_real_distribution<double> dist(-1000, 1000);
-        for (size_t i = 0; i < data.size(); i++)
-        {
-            data[i] = (T)(dist(gen));
-        }
-    }
-    else
-    {
-        for (size_t i = 0; i < data.size(); i++)
-        {
-            data[i] = i;
-        }
-    }
-}
-
-template<typename T>
-bool PerformanceRun(size_t count, unsigned int iterations, bool simple)
-{
-    vector_aligned64_t<T> data ;
-    filldata(data, count, simple);
-
-    cout << "##" << endl;
-    cout << "## Performance run for type: " << typeid(T).name() << ", count: " << count << ", iterations: " << iterations << endl;
-    cout << "##" << endl;
-
-    string formatt = "%u" ;
-    T result = 0, initial=0.0 ;
-    T check_result = 0;
-    /*
-     * std::reduce
-     */
-    cpu_timer timer1;
-    for (unsigned int i = 0; i < iterations; ++i)
-    {
-        check_result = std::reduce(data.begin(), data.end(), initial);
-        //check_result = genericSum(data.data(), count, initial);
-        //check_result = boost::accumulate(data, initial);
-    }
-    timer1.stop();
-    auto std_elapsed = timer1.elapsed().user;
-    cout << "standard Result: " << check_result << "  " << timer1.format(5, formatt) << endl;
-    /*
-     * vector_reduce
-     */
-    cpu_timer timer2;
-    for (unsigned int i = 0; i < iterations; ++i)
-    {
-        result = vector_reduce(data.data(), count);
-    }
-    timer2.stop();
-    auto elapsed = timer2.elapsed().user;
-    cout << "intrinsics Result: " << result << "  " << timer2.format(5, formatt) << endl;
-    cout << "intrinsics speedup: " << std::fixed << std::setprecision(2) << (double)std_elapsed / (double)elapsed << endl;
-    /*
-     * vector_reduce_simd
-     */
-    cpu_timer timer3;
-    for (unsigned int i = 0; i < iterations; ++i)
-    {
-        result = vector_reduce_simd(data.data(), count);
-    }
-    timer3.stop();
-    cout << "vector_reduce_simd Result: " << result << "  " << timer3.format(5, formatt) << endl;
-    elapsed = timer3.elapsed().user;
-    cout << "simd speedup: " << std::fixed << std::setprecision(2) << (double)std_elapsed / (double)elapsed << endl;
-
-    bool success = almostEqualAbsolute(result, check_result) ;
-
-    cpu_timer timer4;
-    for (unsigned int i = 0; i < iterations; ++i)
-    {
-        result = genericSumSimd(data.data(), count, initial);
-    }
-    timer4.stop();
-    elapsed = timer4.elapsed().user ;
-    cout << "gsimd Result: " << result << "  " << timer4.format(5, formatt) << endl;
-    cout << "gvec  speedup: " << std::fixed << std::setprecision(2) << (double)std_elapsed / (double)elapsed << endl;
-
-    if (!success)
-    {
-        cerr << "Error: Results do not match!  " << check_result - result << endl;
-
-    }
-    return success ;
-}
+extern vector<size_t> Sample_counts ;
 
 int main(int argc, char *argv[])
 {
-    size_t count = 1;
+    size_t count = 1, count256 = 0;
     unsigned int iterations = 1 ;
     bool simple = false;
     bool doDouble=false, doFloat=false, doInt32=false, doInt64=false;
+    double runTime = 0.0;
+    size_t step = 100 ;
+    size_t upper = 10000 ;
+    bool experiment = false ;
+    std::string cpu_name = getCpuNameFromProc();
+
+
     try
     {
         po::options_description desc("Allowed options");
         desc.add_options()
             ("help,h", "produce help message")
-            ("simple,s", "run simple test")
+            ("step,s", po::value<size_t>(&step)->default_value(0), "json sample step size")
+            ("upper,u", po::value<size_t>(&upper)->default_value(-1), "json sample upper limit")
             ("experiment,x", "run experiment")
-            ("count,c", po::value<size_t>(&count)->default_value(1), "number of 256x elements to reduce")
+            ("time,t",  po::value<double>(&runTime)->default_value(0.0), "run timing")
+            ("COUNT,C", po::value<size_t>(&count256)->default_value(0), "number of 256x elements to reduce")
+            ("count,c", po::value<size_t>(&count)->default_value(0), "number of elements to reduce")
             ("iterations,i", po::value<unsigned int>(&iterations)->default_value(1), "number of iterations to run")
             ("double,d", "run double precision")
             ("float,f", "run single precision")
@@ -167,19 +75,16 @@ int main(int argc, char *argv[])
         po::store(po::parse_command_line(argc, argv, desc), vm);
         po::notify(vm);
 
-        if (vm.count("experiment"))
-        {
-            vector_aligned64_t<double> data ;
-            filldata(data, 16, true);
-            //SIMDReduce(data.data(), data.size(), 0.0) ;
-            exit(0);
-        }
+        cout << "CPU: " << cpu_name << endl;
 
         if (vm.count("help"))
         {
             cout << desc << "\n";
             return 0;
         }
+
+        experiment = vm.count("experiment") != 0;
+
         simple = vm.count("simple") != 0;
 
         doDouble = vm.count("double") != 0;
@@ -201,27 +106,48 @@ int main(int argc, char *argv[])
         cerr << "Error: " << e.what() << "\n";
         return 1;
     }
-    count *= 256 ;
+    count += count256 * 256 ;
+    const vector sample_counts2 = { count };
+    const vector<size_t>& sample_counts = count == 0 ? Sample_counts : sample_counts2;
 
-    if ( doDouble)
+    if (step == 0)
     {
-        PerformanceRun<double>(count, iterations, simple);
+        upper = count ;
+        step = 1 ;
+    }
+    if (experiment)
+    {
+        // do experiments here
+        exit(0);
     }
 
-    if ( doFloat)
-    {
-        PerformanceRun<float>(count, iterations, simple);
-    }
+    BenchmarkResults results;
+    results.time = runTime;
+    results.cpu_name = cpu_name;
 
-    if ( doInt32)
-    {
-        PerformanceRun<int32_t>(count, iterations, simple);
-    }
+    for ( size_t sample_count : sample_counts ) {
+        BenchmarkRecord record;
+        if ( doDouble)
+        {
+            BenchmarkRun<double>(sample_count, iterations, runTime, record, simple);
+        }
 
-    if ( doInt64)
-    {
-        PerformanceRun<int64_t>(count, iterations, simple);
-    }
+        if ( doFloat)
+        {
+            BenchmarkRun<float>(sample_count, iterations, runTime, record, simple);
+        }
 
+        if ( doInt32)
+        {
+            BenchmarkRun<int32_t>(sample_count, iterations, runTime, record, simple);
+        }
+
+        if ( doInt64)
+        {
+            BenchmarkRun<int64_t>(sample_count, iterations, runTime, record, simple);
+        }
+        results.records.push_back(record);
+    } // for
+    save_benchmark_results(results, "tmp.json") ;
     return 0;
 }

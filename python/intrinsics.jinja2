@@ -30,7 +30,7 @@
      */
     while( len >= {{ n }} * {{ p.STRIDE }} ) {
         {%- for i in range(n) %}
-        {{ p.VTYPE }} r{{"%03d" | format(i)}} = {{ p.LOAD }}(src+{{ i*p.STRIDE }});
+        {{ p.VTYPE }} r{{"%03d" | format(i)}} = {{ p.LOAD }}(&src[{{ i*p.STRIDE }}]);
         {%- endfor %}
 
         {%- for j in steps[loop.index:] %}

@@ -76,7 +76,7 @@ class AVX512ProfileDouble(VectorProfile):
     def __init__(self, n_registers):
         super().__init__("AVX512 Double", n_registers=n_registers)
         self.VTYPE = "__m512d"
-        self.LOAD = "_mm512_loadu_pd"
+        self.LOAD = "_mm512_load_pd"
         self.ADD = "_mm512_add_pd"
         self.REDUCE = "_mm512_reduce_add_pd"
         self.STRIDE = 512//(sizeof(c_double)*8)
@@ -86,7 +86,7 @@ class AVX512ProfileFloat(VectorProfile):
     def __init__(self, n_registers):
         super().__init__("AVX512 Double", n_registers=n_registers)
         self.VTYPE = "__m512"
-        self.LOAD = "_mm512_loadu_ps"
+        self.LOAD = "_mm512_load_ps"
         self.ADD = "_mm512_add_ps"
         self.REDUCE = "_mm512_reduce_add_ps"
         self.STRIDE = 512//(sizeof(c_float)*8)
@@ -96,7 +96,7 @@ class AVX512ProfileInt8(VectorProfile):
     def __init__(self, n_registers):
         super().__init__("AVX512 Double", n_registers=n_registers)
         self.VTYPE = "__m512i"
-        self.LOAD = "_mm512_loadu_epi8"
+        self.LOAD = "_mm512_load_epi8"
         self.ADD = "_mm512_add_epi8"
         self.REDUCE = "_mm512_reduce_add_epi8"
         self.STRIDE = 512 // (sizeof(c_int8) * 8)
@@ -105,7 +105,7 @@ class AVX512ProfileInt16(VectorProfile):
     def __init__(self, n_registers):
         super().__init__("AVX512 Double", n_registers=n_registers)
         self.VTYPE = "__m512i"
-        self.LOAD = "_mm512_loadu_epi16"
+        self.LOAD = "_mm512_load_epi16"
         self.ADD = "_mm512_add_epi16"
         self.REDUCE = "_mm512_reduce_add_epi16"
         self.STRIDE = 512 // (sizeof(c_int16) * 8)
@@ -114,7 +114,7 @@ class AVX512ProfileInt32(VectorProfile):
     def __init__(self, n_registers):
         super().__init__("AVX512 Double", n_registers=n_registers)
         self.VTYPE = "__m512i"
-        self.LOAD = "_mm512_loadu_epi32"
+        self.LOAD = "_mm512_load_epi32"
         self.ADD = "_mm512_add_epi32"
         self.REDUCE = "_mm512_reduce_add_epi32"
         self.STRIDE = 512 // (sizeof(c_int32) * 8)
@@ -123,7 +123,7 @@ class AVX512ProfileInt64(VectorProfile):
     def __init__(self, n_registers):
         super().__init__("AVX512 Double", n_registers=n_registers)
         self.VTYPE = "__m512i"
-        self.LOAD = "_mm512_loadu_epi64"
+        self.LOAD = "_mm512_load_epi64"
         self.ADD = "_mm512_add_epi64"
         self.REDUCE = "_mm512_reduce_add_epi64"
         self.STRIDE = 512 // (sizeof(c_int64) * 8)

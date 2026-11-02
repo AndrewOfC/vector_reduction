@@ -18,4 +18,4 @@ RUN apt-get update && apt-get upgrade -y
 RUN apt-get update --fix-missing
 RUN apt-get install -y build-essential git sudo file cmake \
       libboost-program-options-dev libboost-timer-dev libgtest-dev \
-      python3-jinja2
+      libboost-json-dev python3-jinja2

@@ -22,7 +22,9 @@ jobs:
     steps:
       - name: cpuinfo ${{ matrix.os }}
         run: cat /proc/cpuinfo && lscpu
-      - uses: actions/checkout@v4
+      - name: json-dev
+        run: sudo apt-get install -y libboost-json-dev
+      - uses: actions/checkout@v7
       - name: Render
         working-directory: python
         run: python3 vector_gen.py
@@ -35,4 +37,4 @@ jobs:
       - name: Run tests
         run: build/unittests
       - name: benchmark
-        run: build/redux --double -c 1000 -i 1000
+        run: build/redux --double -C 10 -i 1000 -t 1

@@ -45,6 +45,9 @@
 #define REDUX_VECTOR_REDUCE_H
 #include <stdint.h>
 
+#ifdef __cplusplus
+#include <experimental/simd>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -104,6 +107,8 @@ int64_t vector_reduce_int64(const int64_t *src, size_t len, int64_t initial);
 #endif
 
 #ifdef __cplusplus
+template<typename T>
+using vector_t = std::experimental::native_simd<T>;
 /*
  * C++ wrapper functions to leverage function overloading for different types
  */
@@ -191,6 +196,23 @@ inline int64_t vector_reduce(const int64_t *src, size_t len, int64_t initial = 0
  */
 template<typename T>
 T vector_reduce_simd(const T *src, size_t len, T initial = 0) ;
+
+
+/**
+ * ruduction using C++ variadic templates.  This is a simple implementation that
+ * @tparam T
+ * @param data
+ * @param len
+ * @param initial
+ * @return
+ */
+template<typename T>
+T va_reduce(T *data, size_t len, T initial) ;
+
+template<typename T>
+T va_reduce_simd(T *data, size_t len, T initial) ;
+
+
 
 #endif
 
