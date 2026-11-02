@@ -14,7 +14,6 @@
 
 #include "redux.hpp"
 #include "vector_reduce.h"
-#include "vector_simple.hpp"
 
 using namespace std;
 using boost::timer::cpu_timer;
@@ -136,7 +135,7 @@ bool BenchmarkRun(size_t count, size_t iterations, double runTime, BenchmarkReco
     iterations = total_iterations;
 
     /*
-     * genericSum
+     * vector_reduce_simple
      */
     cout << "standard Result: " << result << "  " << timer.format(5, formatt) << endl;
 
@@ -147,7 +146,7 @@ bool BenchmarkRun(size_t count, size_t iterations, double runTime, BenchmarkReco
     for (size_t i = 0; i < iterations; ++i)
     {
         check_result = std::reduce(data.begin(), data.end(), initial);
-        //check_result = genericSum(data.data(), count, initial);
+        //check_result = vector_reduce_simple(data.data(), count, initial);
         //check_result = boost::accumulate(data, initial);
     }
     timer1.stop();
