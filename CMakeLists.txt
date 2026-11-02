@@ -44,15 +44,8 @@ else ()
     message(FATAL_ERROR "unsupported architecture (platforms available AVX-512, NEON")
 endif ()
 
-add_library(vector_reduce vector_reduce_double.c
-        vector_reduce_simple.cpp
-        vector_reduce_float.c
-         vector_reduce_int32.c
-         vector_reduce_int64.c
-         vector_reduce_simd.cpp
-         vector_reduce_varargs.cpp
-        vector_reduce_varargs_simd.cpp
-)
+add_subdirectory(lib)
+
 ##
 ##
 ##
@@ -60,13 +53,13 @@ add_executable(redux redux.cpp
         redux.cpp
         redux.hpp
         cpuname.cpp
-        vector_reduce.h
         benchmark.cpp
         samplecounts.cpp
 )
-
-
+target_include_directories(redux PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 target_link_libraries(redux PRIVATE vector_reduce Boost::program_options Boost::timer Boost::json)
 
+
 add_executable(unittests unittests.cpp)
+target_include_directories(unittests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 target_link_libraries(unittests PRIVATE vector_reduce Boost::timer GTest::GTest GTest::Main)

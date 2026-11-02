@@ -142,7 +142,7 @@ bool BenchmarkRun(size_t count, size_t iterations, double runTime, BenchmarkReco
         {
             for (size_t i = 0; i < iterations; ++i)
             {
-                result = genericSum(data.data(), count, initial);
+                result = vector_reduce_simple(data.data(), count, initial);
             }
             total_iterations += iterations ;
         }
@@ -153,7 +153,7 @@ bool BenchmarkRun(size_t count, size_t iterations, double runTime, BenchmarkReco
     else {
        for (unsigned int i = 0; i < iterations; ++i)
         {
-            result = genericSum(data.data(), count, initial);
+            result = vector_reduce_simple(data.data(), count, initial);
             //check_result = boost::accumulate(data, initial);
         }
         std_elapsed = timer.elapsed().user;
@@ -211,7 +211,7 @@ bool BenchmarkRun(size_t count, size_t iterations, double runTime, BenchmarkReco
     cpu_timer timer4;
     for (size_t i = 0; i < iterations; ++i)
     {
-        result = genericSumSimd(data.data(), count, initial);
+        result = vector_reduce_simple_simd(data.data(), count, initial);
     }
     timer4.stop();
     elapsed = timer4.elapsed().user ;

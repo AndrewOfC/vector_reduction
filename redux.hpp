@@ -61,6 +61,7 @@ struct BenchmarkResults {
 
     double time ;
     std::string cpu_name ;
+    std::string machine ;
     std::vector<BenchmarkRecord> records ;
 };
 

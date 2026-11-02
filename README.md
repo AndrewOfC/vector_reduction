@@ -21,8 +21,18 @@ add is adding 8 doubles at once or 16 floats. By using multiple
 registers, we can take advantage of the parallelism of the CPU
 where available.
 
-Care has been taken to ensure that lengths that are not multiples
-of 8 or 16 are handled correctly.
+# Files
+
+| File/dir         | Description                                                   |
+|------------------|---------------------------------------------------------------|
+| lib              | separate library files, may be used for other projects        |
+| data             | data from benchmarking runs                                   |
+| imgs             | images used in the README                                      |
+| python           | python code for code generation                               |  
+| benchmark.cpp    | benchmark code for performance testing                        | 
+| unittests.cpp    | unit tests for the library                                    | 
+| redux.cpp        | main file for benchmarking and testing                        |
+| samplecounts.cpp | sample counts for benchmarking highlighting zones of interest |
 
 ## Python
 
@@ -37,9 +47,7 @@ albeit a lengthy one. Using templates to render the code,
 the conversion from AVX intrinsics to NEON is almost trivial. This technique
 proved to useful even with stdx::experimental::simd, where the compiler is doing
 the heavy lifting of
-vectorization. The code generation allows us to use multiple registers in the
-reduction operation,
-which is not possible with a single reduction operation.
+vectorization.
 
 This would especially be useful if other operations were added such as scaling
 or masking.
@@ -56,9 +64,10 @@ Where type may be an int32_t, int64_, float, or double.
 
 GCC has some experimental support for SIMD vectorization. Interesting just
 a simple reduction loop Consistently under performs the intrinsics 32x
-unfolded version by about 50%. This is probably due to the stdx::reduce
-expanding out to fairly large
-block if instructions to extract the vector to individual elements.
+unfolded version. This is probably due to the stdx::reduce
+expanding out to fairly large block if instructions to extract
+the vector to individual elements and the compiler, even with optimization
+will not use parallel registers for the reduction.
 
 When we apply the same pattern of using multiple variables (registers) to the
 experimental simd code we recover the performance on par with the
@@ -67,8 +76,8 @@ intrinsics version.
 ## 32 Variables unfolded.
 
 32 was chosen (though it can be rendered to more or less with the option
-supplied in
-the python code). Since both AVX and NEON have 32 registers. However, in both
+supplied in the python code). Since both AVX and NEON have 32 registers.
+However, in both
 the intrinsics implementation and the experimental simd implementation, we are
 only using 16 registers. This is because
 the reduction code is compiled with `-mavx512f` and `-mavx512vl`, which enables
@@ -79,11 +88,11 @@ level.
 ## _CAUTION_ Byte Alignment
 
 In order to use this code with AVX-512, the input data must be byte aligned to a
-64 byte
-boundary. This means that the address of the data must be a multiple of 64
+64 byte boundary. This means that the address of the data must be a multiple of
+64
 bytes. This is because AVX-512 uses 512-bit
 registers, which are 64 bytes in size. If the data is not byte aligned, the code
-will not work correctly.
+will fault.
 
 16-byte boundaries are highly recommended for NEON.
 
@@ -136,9 +145,9 @@ T generic_reduction(T *src, size_t len, T initial)
 
 With Double precision floating point (64-bit)
 
-| Platform                 | approx Speedup vs std::reduce |
+| Platform                 | approx Speedup vs simple loop |
 |--------------------------|-------------------------------|
-| std::reduce              | ~4x                           |
+| std::reduce              | 4x                            |
 | Apple M4                 | 13x                           |
 | Xeon(R) 6975P-C(EC2 c8i) | 20x                           |
 | AWS Graviton2(EC2 t4g)   | 5x                            |
@@ -149,6 +158,7 @@ the AVX2 vector registers hold 8 doubles.
 
 ![apple-m4-double.png](imgs/apple-m4-double.png)
 ![t4g-double.png](imgs/t4g-double.png)
+
 # Setup Ubuntu
 
 ## Gtest
@@ -232,6 +242,13 @@ GCC provides access to vectorized type through the std::experimental
 namespace using the native_simd type. For AVX-512 this allows the
 use of the 512-bit vector register and in NEON the native_simd type
 provides a 128-bit vector register.
+
+This also allows the use
+of [C++ templates](https://en.cppreference.com/cpp/language/templates) to
+implement a generic reduction
+operation that can be used for various numeric types. Explicit
+instantiation is used to generate the code for the various types, avoiding
+code bloat from template expansion.
 
 ```c++
 template<typename T>
