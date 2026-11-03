@@ -1,3 +1,29 @@
+/*
+ * MIT License
+ * 
+ * Copyright (c) 2026 Andrew Ellis Page
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ * 
+ * SPDX short identifier: MIT
+ */
+
 //
 // Created by parallels on 10/29/26.
 //
@@ -14,7 +40,6 @@
 
 #include "redux.hpp"
 #include "vector_reduce.h"
-#include "vector_simple.hpp"
 
 using namespace std;
 using boost::timer::cpu_timer;
@@ -117,7 +142,7 @@ bool BenchmarkRun(size_t count, size_t iterations, double runTime, BenchmarkReco
         {
             for (size_t i = 0; i < iterations; ++i)
             {
-                result = genericSum(data.data(), count, initial);
+                result = vector_reduce_simple(data.data(), count, initial);
             }
             total_iterations += iterations ;
         }
@@ -128,7 +153,7 @@ bool BenchmarkRun(size_t count, size_t iterations, double runTime, BenchmarkReco
     else {
        for (unsigned int i = 0; i < iterations; ++i)
         {
-            result = genericSum(data.data(), count, initial);
+            result = vector_reduce_simple(data.data(), count, initial);
             //check_result = boost::accumulate(data, initial);
         }
         std_elapsed = timer.elapsed().user;
@@ -136,7 +161,7 @@ bool BenchmarkRun(size_t count, size_t iterations, double runTime, BenchmarkReco
     iterations = total_iterations;
 
     /*
-     * genericSum
+     * vector_reduce_simple
      */
     cout << "standard Result: " << result << "  " << timer.format(5, formatt) << endl;
 
@@ -147,7 +172,7 @@ bool BenchmarkRun(size_t count, size_t iterations, double runTime, BenchmarkReco
     for (size_t i = 0; i < iterations; ++i)
     {
         check_result = std::reduce(data.begin(), data.end(), initial);
-        //check_result = genericSum(data.data(), count, initial);
+        //check_result = vector_reduce_simple(data.data(), count, initial);
         //check_result = boost::accumulate(data, initial);
     }
     timer1.stop();
@@ -186,7 +211,7 @@ bool BenchmarkRun(size_t count, size_t iterations, double runTime, BenchmarkReco
     cpu_timer timer4;
     for (size_t i = 0; i < iterations; ++i)
     {
-        result = genericSumSimd(data.data(), count, initial);
+        result = vector_reduce_simple_simd(data.data(), count, initial);
     }
     timer4.stop();
     elapsed = timer4.elapsed().user ;

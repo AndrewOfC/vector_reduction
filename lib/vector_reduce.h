@@ -53,6 +53,7 @@
 extern "C" {
 #endif
 
+
 /**
  * @brief perform a reduction of an array
  * @param src source array (aligned to 64 bytes for AVX-512 or 16 bytes for NEON)
@@ -209,9 +210,38 @@ T vector_reduce_simd(const T *src, size_t len, T initial = 0) ;
 template<typename T>
 T va_reduce(T *data, size_t len, T initial) ;
 
+/**
+ * reduction using C++ variadic templates and SIMD operations
+ * @tparam T
+ * @param data
+ * @param len
+ * @param initial
+ * @return
+ */
 template<typename T>
 T va_reduce_simd(T *data, size_t len, T initial) ;
 
+/**
+ * @brief perform a reduction of an array using simple C for loop
+ * @tparam T
+ * @param src
+ * @param len
+ * @param initial
+ * @return
+ */
+template<typename T>
+T vector_reduce_simple(T *src, size_t len, T initial) ;
+
+/**
+ * @brief perform a reduction of an array using SIMD operations in a simple_loop
+ * @tparam T
+ * @param src
+ * @param len
+ * @param initial
+ * @return
+ */
+template<typename T>
+T vector_reduce_simple_simd(T *src, size_t len, T initial) ;
 
 
 #endif
