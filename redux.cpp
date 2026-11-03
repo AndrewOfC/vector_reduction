@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
     size_t step = 100 ;
     size_t upper = 10000 ;
     bool experiment = false ;
-    std::string cpu_name = getCpuNameFromProc();
+    std::string cpu_name = getCpuNameFromProc(), machine_name = "" ;
 
 
     try
@@ -69,7 +69,9 @@ int main(int argc, char *argv[])
             ("double,d", "run double precision")
             ("float,f", "run single precision")
             ("int32", "run int32_t")
-            ("int64", "run int64_t");
+            ("int64", "run int64_t")
+        ("machine_name", po::value<std::string>(&machine_name)->default_value("unknown"), "machine name for json output")
+        ("simple", "run simple data set (0,1,2,3...)");
 
         po::variables_map vm;
         po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -124,6 +126,8 @@ int main(int argc, char *argv[])
     BenchmarkResults results;
     results.time = runTime;
     results.cpu_name = cpu_name;
+    results.machine = machine_name ;
+
 
     for ( size_t sample_count : sample_counts ) {
         BenchmarkRecord record;

@@ -8,7 +8,7 @@ In this example we produce a vector reduction function that can be used with
 AVX-512 and NEON.
 
 With proper coding techniques we can achieve performances of 20x
-for double precision floarting point data with Xeon processors.
+for double precision floating point data with Xeon processors.
 
 ![c8i-double.png](imgs/c8i-double.png)
 
@@ -21,8 +21,18 @@ add is adding 8 doubles at once or 16 floats. By using multiple
 registers, we can take advantage of the parallelism of the CPU
 where available.
 
-Care has been taken to ensure that lengths that are not multiples
-of 8 or 16 are handled correctly.
+# Files
+
+| File/dir         | Description                                                   |
+|------------------|---------------------------------------------------------------|
+| lib              | separate library files, may be used for other projects        |
+| data             | data from benchmarking runs                                   |
+| imgs             | images used in the README                                     |
+| python           | python code for code generation                               |  
+| benchmark.cpp    | benchmark code for performance testing                        | 
+| unittests.cpp    | unit tests for the library                                    | 
+| redux.cpp        | main file for benchmarking and testing                        |
+| samplecounts.cpp | sample counts for benchmarking highlighting zones of interest |
 
 ## Python
 
@@ -37,9 +47,7 @@ albeit a lengthy one. Using templates to render the code,
 the conversion from AVX intrinsics to NEON is almost trivial. This technique
 proved to useful even with stdx::experimental::simd, where the compiler is doing
 the heavy lifting of
-vectorization. The code generation allows us to use multiple registers in the
-reduction operation,
-which is not possible with a single reduction operation.
+vectorization.
 
 This would especially be useful if other operations were added such as scaling
 or masking.
@@ -56,9 +64,10 @@ Where type may be an int32_t, int64_, float, or double.
 
 GCC has some experimental support for SIMD vectorization. Interesting just
 a simple reduction loop Consistently under performs the intrinsics 32x
-unfolded version by about 50%. This is probably due to the stdx::reduce
-expanding out to fairly large
-block if instructions to extract the vector to individual elements.
+unfolded version. This is probably due to the stdx::reduce
+expanding out to fairly large block if instructions to extract
+the vector to individual elements and the compiler, even with optimization
+will not use parallel registers for the reduction.
 
 When we apply the same pattern of using multiple variables (registers) to the
 experimental simd code we recover the performance on par with the
@@ -67,40 +76,14 @@ intrinsics version.
 ## 32 Variables unfolded.
 
 32 was chosen (though it can be rendered to more or less with the option
-supplied in
-the python code). Since both AVX and NEON have 32 registers. However, in both
+supplied in the python code). Since both AVX and NEON have 32 registers.
+However, in both
 the intrinsics implementation and the experimental simd implementation, we are
 only using 16 registers. This is because
 the reduction code is compiled with `-mavx512f` and `-mavx512vl`, which enables
 the use of AVX-512 instructions,
 The compiler only uses 16 when we look at the compiled assembly code at the -O3
 level.
-
-## _CAUTION_ Byte Alignment
-
-In order to use this code with AVX-512, the input data must be byte aligned to a
-64 byte
-boundary. This means that the address of the data must be a multiple of 64
-bytes. This is because AVX-512 uses 512-bit
-registers, which are 64 bytes in size. If the data is not byte aligned, the code
-will not work correctly.
-
-16-byte boundaries are highly recommended for NEON.
-
-### With C++ and Boost [Aligned Allocator](https://www.boost.org/doc/libs/latest/doc/html/align/reference.html#align.reference.classes.aligned_allocator)
-
-```c++
-#include <boost/align/aligned_allocator.hpp>
-typedef double target_type ;
-typedef std::vector<target_type, boost::alignment::aligned_allocator<target_type, 64>> vector_aligned64_t;
-```
-
-### With POSIX
-
-```C
-#include <stdlib.h>
-int posix_memalign(void **memptr, size_t alignment, size_t size);
-```
 
 # Applications
 
@@ -134,14 +117,21 @@ T generic_reduction(T *src, size_t len, T initial)
 }
 ```
 
+The same dataset is used with [std::reduce](https://en.cppreference.com/cpp/algorithm/reduce). While it performs 4x
+better than the simple loop, with various architectures, the
+SIMD versions perform 3-7x better than std::reduce.
+
 With Double precision floating point (64-bit)
 
-| Platform                 | approx Speedup vs std::reduce |
-|--------------------------|-------------------------------|
-| std::reduce              | ~4x                           |
-| Apple M4                 | 13x                           |
-| Xeon(R) 6975P-C(EC2 c8i) | 20x                           |
-| AWS Graviton2(EC2 t4g)   | 5x                            |
+| Platform                       | Approx Speedup vs simple loop |
+|--------------------------------|:-----------------------------:|
+| std::reduce                    |              4x               |
+| Apple M4                       |              13x              |
+| Intel Xeon(R) 6975P-C(EC2 c8i) |              20x              |
+| i9-11950Hi9-11950H             |              24x              |
+| AMD EPYC9R45                   |              27x              |
+| AWS Graviton2(EC2 t4g)         |              5x               |
+| Raspbery Pi 5b                 |              5x               |
 
 The performance of the M4 was something of a surprise.
 The NEON vector registers only hold 2 double, where as
@@ -149,6 +139,10 @@ the AVX2 vector registers hold 8 doubles.
 
 ![apple-m4-double.png](imgs/apple-m4-double.png)
 ![t4g-double.png](imgs/t4g-double.png)
+![rpi5b-double.png](imgs/rpi5b-double.png)
+![i9-11950H.png](imgs/i9-11950H.png)
+![EPYC9R45.png](imgs/EPYC9R45.png)
+
 # Setup Ubuntu
 
 ## Gtest
@@ -218,20 +212,58 @@ T genericSum(T *src, size_t len, T initial)
 }
 ```
 
-# Approaches
+## Approaches
 
-## std::reduce
+### std::reduce
 
 This is the c++ standard library implementation of a reduction loop.
 We can see get consistant 4x performance improvement over the simple summation
 loop.
 
-## Experimental SIMD
+### GCC Compiler Intrinsics
 
-GCC provides access to vectorized type through the std::experimental
+GCC provides access to advanced CPU functions
+via [intrinsic functions](https://gcc.gnu.org/onlinedocs/gcc/x86-Built-in-Functions.html).
+However, intrinsics differ between CPU types, making portability difficult,
+though not impossible. There is often overlap in instruction functionality (i.e.
+there are intrinsic instructions in one
+CPU type that have analogs
+in different CPU type e.g., load a register).
+
+It's here that we do some unrolling of the loops. We use 32 entries,
+representing the 32 vector register available in both AVX-512 and NEON.
+This allows the compiler's optimizer to perform more aggressive optimizations,
+taking advantage of parallelism available in the CPU. In our 'optimal'
+sample size ranges (in about the 2000-7000 sample) range, we see
+performance as high as a 20x improvement over the simple loop and a
+5x improvement over std::reduce
+
+When we apply the same unrolling the std::experimental::native_simd
+we see the same improvement.
+
+The [python/intrinsics.jinja2](python/intrinsics.jinja2) file provides
+a template that will implement common operations between an x86 AVX-512
+vector processor and a Arm NEON processor, with one differnce seen
+in the final reduction of the last add.
+
+### Experimental SIMD
+
+GCC provides access to vectorized types through the std::experimental
 namespace using the native_simd type. For AVX-512 this allows the
 use of the 512-bit vector register and in NEON the native_simd type
 provides a 128-bit vector register.
+
+These provide the advantage over intrinsics in that
+the [unrolled c++ code](lib/vector_reduce_simd.cpp) is portable
+between AVX-512, NEON types and other types supported by
+[std::experimental::native_simd](https://cppreference.com/cpp/experimental/simd/simd).
+
+This also allows the use
+of [C++ templates](https://en.cppreference.com/cpp/language/templates) to
+implement a generic reduction
+operation that can be used for various numeric types. Explicit
+instantiation is used to generate the code for the various types, avoiding
+code bloat from template expansion.
 
 ```c++
 template<typename T>
@@ -242,18 +274,20 @@ When we use these in our simple summation loop:
 
 ```c++
 template<typename T>
-T genericSumSimd(T *src, size_t len, T initial)
+T vector_reduce_simple_simd(T *src, size_t len, T initial)
 {
     typedef stdx::native_simd<T> vector_t ;
-    vector_t r ;
-    while ( len >= vector_t::size() )
+    vector_t r, vinitial(0) ;
+    size_t n = len / vector_t::size() ;
+    for ( size_t i = 0 ; i < n ; i++ )
     {
         r.copy_from(src, stdx::vector_aligned);
-        initial += stdx::reduce(r);
+        vinitial += r;
         len -= vector_t::size();
         src += vector_t::size();
     }
-    for( size_t i = 0 ; i < len ; i++, src++ ) {
+    initial += stdx::reduce(vinitial) ;
+    for( size_t i = 0 ; i < len % vector_t::size() ; i++, src++ ) {
         initial += *src ;
     }
     return initial;
@@ -288,27 +322,54 @@ a template that will implement common operations between an x86 AVX-512
 vector processor and a Arm NEON processor, with one differnce seen
 in the final reduction of the last add.
 
+## Encouraging parallel execution
+
+The core of our parallized reductions, such as in [vector_resuce_simd.cpp](lib/vector_reduce_simd.cpp) are basically
+this:
+
+```c++
+        // load r00 - r15
+        r00 += r08 ;
+        r01 += r09 ;
+        r02 += r10 ;
+        r03 += r11 ;
+        r04 += r12 ;
+        r05 += r13 ;
+        r06 += r14 ;
+        r07 += r15 ;
+        
+        r00 += r04 ;
+        r01 += r05 ;
+        r02 += r06 ;
+        r03 += r07 ;
+        
+        r00 += r02 ;
+        r01 += r03 ;
+        
+        r00 += r01 ;
+```
+
+Advanced processors can execute instructions in parallel.  
+the result for r00, can be done simultaneously with the
+result for r01, the loading of the rXX variables also can occur in parallel. In the case of modern compilers, the
+optimizer
+can take advantage of this code structure, where it can't with
+simplistic loops.
+
+Applying SIMD, each rXX variable holds up to 8 values, and
+all 8 values are added at once.
+
 ## C++ Template Varargs reduction
 
 Here we apply C++ templates, using recursion with a template's variable
 arguments:
 
+NOTE:  the va_reduce_simd here is shortened for brevity. The full function
+can be seen in [vector_reduce_varargs_simd.cpp](lib/vector_reduce_varargs_simd.cpp)
+
 ```c++
 template<typename T>
 using vector_t = std::experimental::native_simd<T>;
-
-template<typename T>
-inline static vector_t<T> reduce(vector_t<T> a, T *srcB) // terminal case for recursion
-{
-    vector_t<T> b ;
-    b.copy_from(srcB, stdx::vector_aligned);
-    return a + b ;
-}
-
-inline static auto reduce(auto a, auto srcB, auto... args) // consume argument and recurse
-{
-    return reduce(reduce(a, srcB), args...) ;
-}
 
 template<typename T>
 inline static vector_t<T> reduce(vector_t<T> a, T *srcB) // terminal case for recursion
@@ -362,6 +423,63 @@ to converge around 300,000 samples. We're running up against
 cache sizes and paging tables at this point with our simple
 implementations and unfolded SIMD operations incurring
 the same penalties.
+
+# Files
+
+| File/dir         | Description                                                   |
+|------------------|---------------------------------------------------------------|
+| lib              | separate library files, may be used for other projects        |
+| data             | data from benchmarking runs                                   |
+| imgs             | images used in the README                                     |
+| python           | python code for code generation                               |  
+| benchmark.cpp    | benchmark code for performance testing                        | 
+| unittests.cpp    | unit tests for the library                                    | 
+| redux.cpp        | main file for benchmarking and testing                        |
+| samplecounts.cpp | sample counts for benchmarking highlighting zones of interest |
+
+# _CAUTION_ Byte Alignment
+
+In order to use this code with AVX-512, the input data must be byte aligned to a
+64 byte boundary. This means that the address of the data must be a multiple of
+64
+bytes. This is because AVX-512 uses 512-bit
+registers, which are 64 bytes in size. If the data is not byte aligned, the code
+will fault.
+
+16-byte boundaries are highly recommended for NEON.
+
+## With C++ and Boost [Aligned Allocator](https://www.boost.org/doc/libs/latest/doc/html/align/reference.html#align.reference.classes.aligned_allocator)
+
+```c++
+#include <boost/align/aligned_allocator.hpp>
+typedef double target_type ;
+typedef std::vector<target_type, boost::alignment::aligned_allocator<target_type, 64>> vector_aligned64_t;
+```
+
+## With POSIX
+
+```C
+#include <stdlib.h>
+int posix_memalign(void **memptr, size_t alignment, size_t size);
+```
+
+# Python Templating
+
+The more interesting part could be the Python code. Here we use
+a [jinja2](https://jinja.palletsprojects.com/en/stable/)
+to render the code. The compiler intrinsics for both AVX and NEON
+are nearly identical in function, allowing us to recycle
+the template.
+
+This is especially useful when an algorithm appears as a pattern,
+albeit a lengthy one. Using templates to render the code,
+the conversion from AVX intrinsics to NEON is almost trivial. This technique
+proved to useful even with stdx::experimental::simd, where the compiler is doing
+the heavy lifting of
+vectorization.
+
+This would especially be useful if other operations were added such as scaling
+or masking.
 
 # Notes
 

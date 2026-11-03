@@ -1,13 +1,14 @@
 ##
 ## Container to build&test
 ## obtain key from from github.com => Settings => Credentials => Personal Access Token
+## enable write:packages
 ##
 ## ```bash
 ## docker build -t containername .
 ## export GHCR_KEY=xxxxx
 ## echo $GHCR_KEY | docker login ghcr.io -u USERNAME --password-stdin
-## docker tag containername  ghcr.io/sername(lowercase)/containername
-## docker push ghcr.io/username(lowercase)/avxbuild-arm64
+## docker tag containername  ghcr.io/username(lowercase)/containername
+## docker push ghcr.io/username(lowercase)/continername
 ## ```
 ##
 ##  Then enable repo or make container public:
