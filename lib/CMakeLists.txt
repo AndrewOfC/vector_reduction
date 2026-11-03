@@ -13,3 +13,6 @@ set(LIB_FILES
 )
 
 add_library(vector_reduce ${LIB_FILES})
+
+install(TARGETS vector_reduce LIBRARY DESTINATION lib)
+install(FILES vector_reduce.h DESTINATION include)

@@ -56,7 +56,6 @@ T vector_reduce_simple_simd(T *src, size_t len, T initial)
     typedef stdx::native_simd<T> vector_t ;
     vector_t r, vinitial(0) ;
     size_t n = len / vector_t::size() ;
-//#pragma GCC unroll 4
     for ( size_t i = 0 ; i < n ; i++ )
     {
         r.copy_from(src, stdx::vector_aligned);
@@ -65,7 +64,6 @@ T vector_reduce_simple_simd(T *src, size_t len, T initial)
         src += vector_t::size();
     }
     initial += stdx::reduce(vinitial) ;
-//#pragma GCC unroll 4
     for( size_t i = 0 ; i < len % vector_t::size() ; i++, src++ ) {
         initial += *src ;
     }

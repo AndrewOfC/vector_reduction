@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
     BenchmarkResults results;
     results.time = runTime;
     results.cpu_name = cpu_name;
-    results.machine = machine_name() ;
+    results.machine = machine_name ;
 
 
     for ( size_t sample_count : sample_counts ) {

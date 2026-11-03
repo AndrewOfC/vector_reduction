@@ -8,7 +8,7 @@ In this example we produce a vector reduction function that can be used with
 AVX-512 and NEON.
 
 With proper coding techniques we can achieve performances of 20x
-for double precision floarting point data with Xeon processors.
+for double precision floating point data with Xeon processors.
 
 ![c8i-double.png](imgs/c8i-double.png)
 
@@ -20,37 +20,6 @@ In the case of AVX-512, each register is 64 bytes in size. So each
 add is adding 8 doubles at once or 16 floats. By using multiple
 registers, we can take advantage of the parallelism of the CPU
 where available.
-
-# Files
-
-| File/dir         | Description                                                   |
-|------------------|---------------------------------------------------------------|
-| lib              | separate library files, may be used for other projects        |
-| data             | data from benchmarking runs                                   |
-| imgs             | images used in the README                                      |
-| python           | python code for code generation                               |  
-| benchmark.cpp    | benchmark code for performance testing                        | 
-| unittests.cpp    | unit tests for the library                                    | 
-| redux.cpp        | main file for benchmarking and testing                        |
-| samplecounts.cpp | sample counts for benchmarking highlighting zones of interest |
-
-## Python
-
-The more interesting part could be the Python code. Here we use
-a [jinja2](https://jinja.palletsprojects.com/en/stable/)
-to render the code. The compiler intrinsics for both AVX and NEON
-are nearly identical in function, allowing us to recycle
-the template.
-
-This is especially useful when an algorithm appears as a pattern,
-albeit a lengthy one. Using templates to render the code,
-the conversion from AVX intrinsics to NEON is almost trivial. This technique
-proved to useful even with stdx::experimental::simd, where the compiler is doing
-the heavy lifting of
-vectorization.
-
-This would especially be useful if other operations were added such as scaling
-or masking.
 
 # Usage
 
@@ -151,6 +120,7 @@ With Double precision floating point (64-bit)
 | Apple M4                 | 13x                           |
 | Xeon(R) 6975P-C(EC2 c8i) | 20x                           |
 | AWS Graviton2(EC2 t4g)   | 5x                            |
+| Raspbery Pi 5b           | 5x                            |
 
 The performance of the M4 was something of a surprise.
 The NEON vector registers only hold 2 double, where as
@@ -158,6 +128,7 @@ the AVX2 vector registers hold 8 doubles.
 
 ![apple-m4-double.png](imgs/apple-m4-double.png)
 ![t4g-double.png](imgs/t4g-double.png)
+![rpi5b-double.png](imgs/rpi5b-double.png)
 
 # Setup Ubuntu
 
@@ -228,20 +199,51 @@ T genericSum(T *src, size_t len, T initial)
 }
 ```
 
-# Approaches
+## Approaches
 
-## std::reduce
+### std::reduce
 
 This is the c++ standard library implementation of a reduction loop.
 We can see get consistant 4x performance improvement over the simple summation
 loop.
 
-## Experimental SIMD
+### GCC Compiler Intrinsics
 
-GCC provides access to vectorized type through the std::experimental
+GCC provides access to advanced CPU functions
+via [intrinsic functions](https://gcc.gnu.org/onlinedocs/gcc/x86-Built-in-Functions.html).
+However, intrinsics differ between CPU types, making portability difficult,
+though not impossible. There is often overlap in instruction functionality (i.e.
+there are intrinsic instructions in one
+CPU type that have analogs
+in different CPU type e.g., load a register).
+
+It's here that we do some unrolling of the loops. We use 32 entries,
+representing the 32 vector register available in both AVX-512 and NEON.
+This allows the compiler's optimizer to perform more aggressive optimizations,
+taking advantage of parallelism available in the CPU. In our 'optimal'
+sample size ranges (in about the 2000-7000 sample) range, we see
+performance as high as a 20x improvement over the simple loop and a
+5x improvement over std::reduce
+
+When we apply the same unrolling the std::experimental::native_simd
+we see the same improvement.
+
+The [python/intrinsics.jinja2](python/intrinsics.jinja2) file provides
+a template that will implement common operations between an x86 AVX-512
+vector processor and a Arm NEON processor, with one differnce seen
+in the final reduction of the last add.
+
+### Experimental SIMD
+
+GCC provides access to vectorized types through the std::experimental
 namespace using the native_simd type. For AVX-512 this allows the
 use of the 512-bit vector register and in NEON the native_simd type
 provides a 128-bit vector register.
+
+These provide the advantage over intrinsics in that
+the [unrolled c++ code](lib/vector_reduce_simd.cpp) is portable
+between AVX-512, NEON types and other types supported by
+[std::experimental::native_simd](https://cppreference.com/cpp/experimental/simd/simd).
 
 This also allows the use
 of [C++ templates](https://en.cppreference.com/cpp/language/templates) to
@@ -259,18 +261,20 @@ When we use these in our simple summation loop:
 
 ```c++
 template<typename T>
-T genericSumSimd(T *src, size_t len, T initial)
+T vector_reduce_simple_simd(T *src, size_t len, T initial)
 {
     typedef stdx::native_simd<T> vector_t ;
-    vector_t r ;
-    while ( len >= vector_t::size() )
+    vector_t r, vinitial(0) ;
+    size_t n = len / vector_t::size() ;
+    for ( size_t i = 0 ; i < n ; i++ )
     {
         r.copy_from(src, stdx::vector_aligned);
-        initial += stdx::reduce(r);
+        vinitial += r;
         len -= vector_t::size();
         src += vector_t::size();
     }
-    for( size_t i = 0 ; i < len ; i++, src++ ) {
+    initial += stdx::reduce(vinitial) ;
+    for( size_t i = 0 ; i < len % vector_t::size() ; i++, src++ ) {
         initial += *src ;
     }
     return initial;
@@ -280,32 +284,7 @@ T genericSumSimd(T *src, size_t len, T initial)
 We can see about a 5x improvement over the simple summation loop.
 However, there is much more improvement to be had.
 
-## GCC Compiler Intrinsics
-
-GCC provides access to advanced CPU functions via intrinsic functions.
-However, intrinsics differ between CPU types, making portability difficult,
-though not impossible. There is often overlap in instruction functionality (i.e.
-there are intrinsic instructions in one
-CPU type that have analogs
-in different CPU type e.g., load a register).
-
-It's here that we do some unrolling of the loops. We use 32 entries,
-reprsenting the 32 vector register availble in both AVX-512 and NEON.
-This allows the compiler's optimizer to perform more aggressive optimizations,
-taking advantage of parallelism available in the CPU. In our 'optimal'
-sample size ranges (in about the 2000-7000 sample) range, we see
-performace as high as a 20x improvement over the simple loop and a
-5x improvement over std::reduce
-
-When we apply the same unrolling the std::experimental::native_simd
-we see the same improvement.
-
-The [python/intrinsics.jinja2](python/intrinsics.jinja2) file provides
-a template that will implement common operations between an x86 AVX-512
-vector processor and a Arm NEON processor, with one differnce seen
-in the final reduction of the last add.
-
-## C++ Template Varargs reduction
+### C++ Template Varargs reduction
 
 Here we apply C++ templates, using recursion with a template's variable
 arguments:
@@ -379,6 +358,37 @@ to converge around 300,000 samples. We're running up against
 cache sizes and paging tables at this point with our simple
 implementations and unfolded SIMD operations incurring
 the same penalties.
+
+# Files
+
+| File/dir         | Description                                                   |
+|------------------|---------------------------------------------------------------|
+| lib              | separate library files, may be used for other projects        |
+| data             | data from benchmarking runs                                   |
+| imgs             | images used in the README                                     |
+| python           | python code for code generation                               |  
+| benchmark.cpp    | benchmark code for performance testing                        | 
+| unittests.cpp    | unit tests for the library                                    | 
+| redux.cpp        | main file for benchmarking and testing                        |
+| samplecounts.cpp | sample counts for benchmarking highlighting zones of interest |
+
+# Python Templating
+
+The more interesting part could be the Python code. Here we use
+a [jinja2](https://jinja.palletsprojects.com/en/stable/)
+to render the code. The compiler intrinsics for both AVX and NEON
+are nearly identical in function, allowing us to recycle
+the template.
+
+This is especially useful when an algorithm appears as a pattern,
+albeit a lengthy one. Using templates to render the code,
+the conversion from AVX intrinsics to NEON is almost trivial. This technique
+proved to useful even with stdx::experimental::simd, where the compiler is doing
+the heavy lifting of
+vectorization.
+
+This would especially be useful if other operations were added such as scaling
+or masking.
 
 # Notes
 
