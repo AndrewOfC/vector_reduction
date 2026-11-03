@@ -54,32 +54,6 @@ the use of AVX-512 instructions,
 The compiler only uses 16 when we look at the compiled assembly code at the -O3
 level.
 
-## _CAUTION_ Byte Alignment
-
-In order to use this code with AVX-512, the input data must be byte aligned to a
-64 byte boundary. This means that the address of the data must be a multiple of
-64
-bytes. This is because AVX-512 uses 512-bit
-registers, which are 64 bytes in size. If the data is not byte aligned, the code
-will fault.
-
-16-byte boundaries are highly recommended for NEON.
-
-### With C++ and Boost [Aligned Allocator](https://www.boost.org/doc/libs/latest/doc/html/align/reference.html#align.reference.classes.aligned_allocator)
-
-```c++
-#include <boost/align/aligned_allocator.hpp>
-typedef double target_type ;
-typedef std::vector<target_type, boost::alignment::aligned_allocator<target_type, 64>> vector_aligned64_t;
-```
-
-### With POSIX
-
-```C
-#include <stdlib.h>
-int posix_memalign(void **memptr, size_t alignment, size_t size);
-```
-
 # Applications
 
 Numeric algorithms that need a reduction operation, where
@@ -371,6 +345,32 @@ the same penalties.
 | unittests.cpp    | unit tests for the library                                    | 
 | redux.cpp        | main file for benchmarking and testing                        |
 | samplecounts.cpp | sample counts for benchmarking highlighting zones of interest |
+
+# _CAUTION_ Byte Alignment
+
+In order to use this code with AVX-512, the input data must be byte aligned to a
+64 byte boundary. This means that the address of the data must be a multiple of
+64
+bytes. This is because AVX-512 uses 512-bit
+registers, which are 64 bytes in size. If the data is not byte aligned, the code
+will fault.
+
+16-byte boundaries are highly recommended for NEON.
+
+## With C++ and Boost [Aligned Allocator](https://www.boost.org/doc/libs/latest/doc/html/align/reference.html#align.reference.classes.aligned_allocator)
+
+```c++
+#include <boost/align/aligned_allocator.hpp>
+typedef double target_type ;
+typedef std::vector<target_type, boost::alignment::aligned_allocator<target_type, 64>> vector_aligned64_t;
+```
+
+## With POSIX
+
+```C
+#include <stdlib.h>
+int posix_memalign(void **memptr, size_t alignment, size_t size);
+```
 
 # Python Templating
 
