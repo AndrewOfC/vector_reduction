@@ -88,11 +88,12 @@ T generic_reduction(T *src, size_t len, T initial)
 
 With Double precision floating point (64-bit)
 
-| Platform                 | approx Speedup vs simple loop |
+| Platform                 | Approx Speedup vs simple loop |
 |--------------------------|-------------------------------|
 | std::reduce              | 4x                            |
 | Apple M4                 | 13x                           |
 | Xeon(R) 6975P-C(EC2 c8i) | 20x                           |
+| i9-11950Hi9-11950H       | 24x                           |
 | AWS Graviton2(EC2 t4g)   | 5x                            |
 | Raspbery Pi 5b           | 5x                            |
 
@@ -103,6 +104,7 @@ the AVX2 vector registers hold 8 doubles.
 ![apple-m4-double.png](imgs/apple-m4-double.png)
 ![t4g-double.png](imgs/t4g-double.png)
 ![rpi5b-double.png](imgs/rpi5b-double.png)
+![i9-11950H.png](imgs/i9-11950H.png)
 
 # Setup Ubuntu
 
