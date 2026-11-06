@@ -21,6 +21,37 @@ add is adding 8 doubles at once or 16 floats. By using multiple
 registers, we can take advantage of the parallelism of the CPU
 where available.
 
+# Files
+
+| File/dir         | Description                                                   |
+|------------------|---------------------------------------------------------------|
+| lib              | separate library files, may be used for other projects        |
+| data             | data from benchmarking runs                                   |
+| imgs             | images used in the README                                     |
+| python           | python code for code generation                               |  
+| benchmark.cpp    | benchmark code for performance testing                        | 
+| unittests.cpp    | unit tests for the library                                    | 
+| redux.cpp        | main file for benchmarking and testing                        |
+| samplecounts.cpp | sample counts for benchmarking highlighting zones of interest |
+
+## Python
+
+The more interesting part could be the Python code. Here we use
+a [jinja2](https://jinja.palletsprojects.com/en/stable/)
+to render the code. The compiler intrinsics for both AVX and NEON
+are nearly identical in function, allowing us to recycle
+the template.
+
+This is especially useful when an algorithm appears as a pattern,
+albeit a lengthy one. Using templates to render the code,
+the conversion from AVX intrinsics to NEON is almost trivial. This technique
+proved to useful even with stdx::experimental::simd, where the compiler is doing
+the heavy lifting of
+vectorization.
+
+This would especially be useful if other operations were added such as scaling
+or masking.
+
 # Usage
 
 ```c++
@@ -94,6 +125,7 @@ With Double precision floating point (64-bit)
 | Apple M4                 | 13x                           |
 | Xeon(R) 6975P-C(EC2 c8i) | 20x                           |
 | i9-11950Hi9-11950H       | 24x                           |
+| EPYC9R45                 | 27x                           |
 | AWS Graviton2(EC2 t4g)   | 5x                            |
 | Raspbery Pi 5b           | 5x                            |
 
@@ -105,7 +137,7 @@ the AVX2 vector registers hold 8 doubles.
 ![t4g-double.png](imgs/t4g-double.png)
 ![rpi5b-double.png](imgs/rpi5b-double.png)
 ![i9-11950H.png](imgs/i9-11950H.png)
-
+![EPYC9R45.png](imgs/EPYC9R45.png)
 # Setup Ubuntu
 
 ## Gtest
@@ -260,27 +292,79 @@ T vector_reduce_simple_simd(T *src, size_t len, T initial)
 We can see about a 5x improvement over the simple summation loop.
 However, there is much more improvement to be had.
 
-### C++ Template Varargs reduction
+## GCC Compiler Intrinsics
+
+GCC provides access to advanced CPU functions via intrinsic functions.
+However, intrinsics differ between CPU types, making portability difficult,
+though not impossible. There is often overlap in instruction functionality (i.e.
+there are intrinsic instructions in one
+CPU type that have analogs
+in different CPU type e.g., load a register).
+
+It's here that we do some unrolling of the loops. We use 32 entries,
+reprsenting the 32 vector register availble in both AVX-512 and NEON.
+This allows the compiler's optimizer to perform more aggressive optimizations,
+taking advantage of parallelism available in the CPU. In our 'optimal'
+sample size ranges (in about the 2000-7000 sample) range, we see
+performace as high as a 20x improvement over the simple loop and a
+5x improvement over std::reduce
+
+When we apply the same unrolling the std::experimental::native_simd
+we see the same improvement.
+
+The [python/intrinsics.jinja2](python/intrinsics.jinja2) file provides
+a template that will implement common operations between an x86 AVX-512
+vector processor and a Arm NEON processor, with one differnce seen
+in the final reduction of the last add.
+
+## Encouraging parallel execution
+
+The core of our parallized reductions, such as in [vector_resuce_simd.cpp](lib/vector_reduce_simd.cpp) are basically
+this:
+
+```c++
+        // load r00 - r15
+        r00 += r08 ;
+        r01 += r09 ;
+        r02 += r10 ;
+        r03 += r11 ;
+        r04 += r12 ;
+        r05 += r13 ;
+        r06 += r14 ;
+        r07 += r15 ;
+        
+        r00 += r04 ;
+        r01 += r05 ;
+        r02 += r06 ;
+        r03 += r07 ;
+        
+        r00 += r02 ;
+        r01 += r03 ;
+        
+        r00 += r01 ;
+```
+
+Advanced processors can execute instructions in parallel.  
+the result for r00, can be done simultaneously with the
+result for r01, the loading of the rXX variables also can occur in parallel. In the case of modern compilers, the
+optimizer
+can take advantage of this code structure, where it can't with
+simplistic loops.
+
+Applying SIMD, each rXX variable holds up to 8 values, and
+all 8 values are added at once.
+
+## C++ Template Varargs reduction
 
 Here we apply C++ templates, using recursion with a template's variable
 arguments:
 
+NOTE:  the va_reduce_simd here is shortened for brevity.  The full function
+can be seen in [vector_reduce_varargs_simd.cpp](lib/vector_reduce_varargs_simd.cpp)
+
 ```c++
 template<typename T>
 using vector_t = std::experimental::native_simd<T>;
-
-template<typename T>
-inline static vector_t<T> reduce(vector_t<T> a, T *srcB) // terminal case for recursion
-{
-    vector_t<T> b ;
-    b.copy_from(srcB, stdx::vector_aligned);
-    return a + b ;
-}
-
-inline static auto reduce(auto a, auto srcB, auto... args) // consume argument and recurse
-{
-    return reduce(reduce(a, srcB), args...) ;
-}
 
 template<typename T>
 inline static vector_t<T> reduce(vector_t<T> a, T *srcB) // terminal case for recursion
