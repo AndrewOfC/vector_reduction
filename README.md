@@ -117,17 +117,21 @@ T generic_reduction(T *src, size_t len, T initial)
 }
 ```
 
+The same dataset is used with [std::reduce](https://en.cppreference.com/cpp/algorithm/reduce). While it performs 4x
+better than the simple loop, with various architectures, the
+SIMD versions perform 3-7x better than std::reduce.
+
 With Double precision floating point (64-bit)
 
-| Platform                 | Approx Speedup vs simple loop |
-|--------------------------|-------------------------------|
-| std::reduce              | 4x                            |
-| Apple M4                 | 13x                           |
-| Xeon(R) 6975P-C(EC2 c8i) | 20x                           |
-| i9-11950Hi9-11950H       | 24x                           |
-| EPYC9R45                 | 27x                           |
-| AWS Graviton2(EC2 t4g)   | 5x                            |
-| Raspbery Pi 5b           | 5x                            |
+| Platform                       | Approx Speedup vs simple loop |
+|--------------------------------|:-----------------------------:|
+| std::reduce                    |              4x               |
+| Apple M4                       |              13x              |
+| Intel Xeon(R) 6975P-C(EC2 c8i) |              20x              |
+| i9-11950Hi9-11950H             |              24x              |
+| AMD EPYC9R45                   |              27x              |
+| AWS Graviton2(EC2 t4g)         |              5x               |
+| Raspbery Pi 5b                 |              5x               |
 
 The performance of the M4 was something of a surprise.
 The NEON vector registers only hold 2 double, where as
@@ -138,6 +142,7 @@ the AVX2 vector registers hold 8 doubles.
 ![rpi5b-double.png](imgs/rpi5b-double.png)
 ![i9-11950H.png](imgs/i9-11950H.png)
 ![EPYC9R45.png](imgs/EPYC9R45.png)
+
 # Setup Ubuntu
 
 ## Gtest
@@ -359,7 +364,7 @@ all 8 values are added at once.
 Here we apply C++ templates, using recursion with a template's variable
 arguments:
 
-NOTE:  the va_reduce_simd here is shortened for brevity.  The full function
+NOTE:  the va_reduce_simd here is shortened for brevity. The full function
 can be seen in [vector_reduce_varargs_simd.cpp](lib/vector_reduce_varargs_simd.cpp)
 
 ```c++
