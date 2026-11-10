@@ -28,15 +28,20 @@ import matplotlib.pyplot as plt
 import numpy as np
 import json
 
-def gatherSamples(data, sample_count_limit, keys):
+def gatherSamples(data, sample_count_limit, keys, sample_start=100, sample_step=100):
     x = []
     ys = []
+    next_sample = sample_start
     for d in data['records']:
+        count = d['sample_count']
+        if count < next_sample:
+            continue
         entry = [d[key] for key in keys]
-        x.append(d['sample_count'])
+        x.append(count)
         ys.append(entry)
         if x[-1] > sample_count_limit:
             break
+        next_sample += sample_step
     return x,ys
 
 def main():
