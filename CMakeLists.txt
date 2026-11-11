@@ -16,12 +16,12 @@ else()
        set(ARM_VECTOR_LENGTH "$ENV{ARM_VECTOR_LENGTH}")
     else()
        set(ARM_VECTOR_LENGTH "128")
-
-
-
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv8.5-a+sve2 -msve-vector-bits=${ARM_VECTOR_LENGTH}")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=armv8.5-a+sve2 -msve-vector-bits=${ARM_VECTOR_LENGTH}")
-endif()
+   endif()
+    # set(ARCH "armv8.5-a+sve")
+    # set(ARCH "armv8.5-a+sve2")
+    set(ARCH "neoverse-v3")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=${ARCH} -msve-vector-bits=${ARM_VECTOR_LENGTH}")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=${ARCH} -msve-vector-bits=${ARM_VECTOR_LENGTH}")
 endif()
 
 check_cxx_source_compiles("
