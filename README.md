@@ -12,6 +12,8 @@ for double precision floating point data with Xeon processors.
 
 ![c8i-double.png](imgs/c8i-double.png)
 
+![](imgs/cpuspeedup.png)
+
 ![](imgs/reduce.svg)
 
 (Graphic courtesy of https://grok.com)
@@ -117,7 +119,9 @@ T generic_reduction(T *src, size_t len, T initial)
 }
 ```
 
-The same dataset is used with [std::reduce](https://en.cppreference.com/cpp/algorithm/reduce). While it performs 4x
+The same dataset is used
+with [std::reduce](https://en.cppreference.com/cpp/algorithm/reduce). While it
+performs 4x
 better than the simple loop, with various architectures, the
 SIMD versions perform 3-7x better than std::reduce.
 
@@ -131,6 +135,7 @@ With Double precision floating point (64-bit)
 | i9-11950Hi9-11950H             |              24x              |
 | AMD EPYC9R45                   |              27x              |
 | AWS Graviton2(EC2 t4g)         |              5x               |
+| AWS Graviton5(EC2 m9g)         |              9x               |
 | Raspbery Pi 5b                 |              5x               |
 
 The performance of the M4 was something of a surprise.
@@ -139,6 +144,7 @@ the AVX2 vector registers hold 8 doubles.
 
 ![apple-m4-double.png](imgs/apple-m4-double.png)
 ![t4g-double.png](imgs/t4g-double.png)
+![m9g-double.png](imgs/m9g-double.png)
 ![rpi5b-double.png](imgs/rpi5b-double.png)
 ![i9-11950H.png](imgs/i9-11950H.png)
 ![EPYC9R45.png](imgs/EPYC9R45.png)
@@ -324,7 +330,8 @@ in the final reduction of the last add.
 
 ## Encouraging parallel execution
 
-The core of our parallized reductions, such as in [vector_resuce_simd.cpp](lib/vector_reduce_simd.cpp) are basically
+The core of our parallized reductions, such as
+in [vector_resuce_simd.cpp](lib/vector_reduce_simd.cpp) are basically
 this:
 
 ```c++
@@ -351,7 +358,8 @@ this:
 
 Advanced processors can execute instructions in parallel.  
 the result for r00, can be done simultaneously with the
-result for r01, the loading of the rXX variables also can occur in parallel. In the case of modern compilers, the
+result for r01, the loading of the rXX variables also can occur in parallel. In
+the case of modern compilers, the
 optimizer
 can take advantage of this code structure, where it can't with
 simplistic loops.
@@ -365,7 +373,8 @@ Here we apply C++ templates, using recursion with a template's variable
 arguments:
 
 NOTE:  the va_reduce_simd here is shortened for brevity. The full function
-can be seen in [vector_reduce_varargs_simd.cpp](lib/vector_reduce_varargs_simd.cpp)
+can be seen
+in [vector_reduce_varargs_simd.cpp](lib/vector_reduce_varargs_simd.cpp)
 
 ```c++
 template<typename T>

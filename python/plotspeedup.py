@@ -44,17 +44,47 @@ def gatherSamples(data, sample_count_limit, keys, sample_start=100, sample_step=
         next_sample += sample_step
     return x,ys
 
+def compare_cpus(args):
+    # file_labels = zip(*(x.split(':') for x in args.file))
+    keys = ("std_simd_speedup",)
+
+    speedup_std_reduce, ax = plt.subplots(figsize=(8, 6))
+
+    ax.set(xlabel="Sample Count",
+           ylabel="Speedup",
+           title=f"CPUs Speedup")
+
+    for file, label in (x.split(':') for x in args.file):
+        data = json.load(open(file))
+        x, ys = gatherSamples(data, args.sample_count_limit, keys)
+        y = [ys[j][0] for j in range(len(x))]
+        plt.plot(x, y, label=label)
+
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.15), ncols=2)
+    if args.render:
+        output_name = args.plot_file
+        plt.savefig(output_name, bbox_inches="tight")
+        print(f"rendered {output_name}")
+    else:
+        plt.show()
+
+    return
+
 def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("file", nargs="+", help="profile json file")
     parser.add_argument("-r", "--render", action="store_true", help="Render the plot")
     parser.add_argument("--sample-count-limit", type=int, default=7000, help="Sample count limit")
+    parser.add_argument("--compare-cpus", action="store_true", help="Compare CPU performance.  Args are 'file:label'")
+    parser.add_argument("--plot-file", type=str, default="cpuspeedup.png", help="Output plot file")
     args = parser.parse_args()
 
+    if args.compare_cpus:
+        compare_cpus(args)
+        exit(0)
+
     for file in args.file:
-
-
         data = json.load(open(file))
         machine = data.get("machine", "Unknown Machine")
 
@@ -62,7 +92,7 @@ def main():
         labels = ("std::reduce", "Simple SIMD", "Unfolded SIMD")
         x,ys = gatherSamples(data, args.sample_count_limit, keys)
 
-        speedup_std_reduce, ax = plt.subplots()
+        speedup_std_reduce, ax = plt.subplots(figsize=(8, 6))
 
         for i, key in enumerate(labels):
             y = [ ys[j][i] for j in range(len(x)) ]
