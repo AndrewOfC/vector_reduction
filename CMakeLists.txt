@@ -12,8 +12,16 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86|X86|amd64|AMD64)")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
 else()
     # Arm instances
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv8.5-a+sve2")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=armv8.5-a+sve2")
+    if(DEFINED ENV{ARM_VECTOR_LENGTH})
+       set(ARM_VECTOR_LENGTH "$ENV{ARM_VECTOR_LENGTH}")
+    else()
+       set(ARM_VECTOR_LENGTH "128")
+
+
+
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv8.5-a+sve2 -msve-vector-bits=${ARM_VECTOR_LENGTH}")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=armv8.5-a+sve2 -msve-vector-bits=${ARM_VECTOR_LENGTH}")
+endif()
 endif()
 
 check_cxx_source_compiles("

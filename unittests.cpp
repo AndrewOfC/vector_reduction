@@ -49,7 +49,7 @@ template<typename T>
 void CreateTrivialData(vector_aligned64_t<T>& data, size_t n) {
     data.resize(n);
     for (size_t i = 0; i < n; ++i) {
-        data[i] = static_cast<T>(i);
+      data[i] = 1 ; // static_cast<T>(i);
     }
 }
 

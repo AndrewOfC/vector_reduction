@@ -78,7 +78,8 @@ int main(int argc, char *argv[])
         po::notify(vm) ;
 
         cout << "CPU: " << cpu_name << endl;
-        cout << "sizeof(vector_t<double>) = " << sizeof(vector_t<double>) << endl;
+        cout << "sizeof(vector_t<double>) = " << sizeof(vector_t<double>) << " ";
+	cout << "vector_t<double>::size() = " << vector_t<double>::size() << endl ; 
 
         if (vm.count("help"))
         {
