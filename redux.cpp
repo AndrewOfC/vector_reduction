@@ -75,9 +75,10 @@ int main(int argc, char *argv[])
 
         po::variables_map vm;
         po::store(po::parse_command_line(argc, argv, desc), vm);
-        po::notify(vm);
+        po::notify(vm) ;
 
         cout << "CPU: " << cpu_name << endl;
+        cout << "sizeof(vector_t<double>) = " << sizeof(vector_t<double>) << endl;
 
         if (vm.count("help"))
         {

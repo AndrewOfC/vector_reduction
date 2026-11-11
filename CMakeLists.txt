@@ -11,8 +11,9 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86|X86|amd64|AMD64)")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
 else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
+    # Arm instances
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv8.5-a+sve2")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=armv8.5-a+sve2")
 endif()
 
 check_cxx_source_compiles("
