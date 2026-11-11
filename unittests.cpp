@@ -61,6 +61,9 @@ void TrivialTestInner(size_t n) {
     auto check = vector_reduce(data.data(), data.size(), static_cast<T>(0));
     EXPECT_EQ(correct, check) << " vector_reduce";
 
+    check = vector_reduce_simple_simd(data.data(), data.size(), static_cast<T>(0));
+    EXPECT_EQ(correct, check) << " vector_reduce_simple_simd";
+
     check = vector_reduce_simd(data.data(), data.size(), static_cast<T>(0));
     EXPECT_EQ(correct, check) << " vector_reduce_simd";
 
