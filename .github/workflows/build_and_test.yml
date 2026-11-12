@@ -3,6 +3,9 @@ name: Build and Test
 
 on:
   push:
+    branches-ignore:
+      - dev
+      - dev/*
   pull_request:
 
 jobs:
