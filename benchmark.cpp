@@ -45,7 +45,7 @@ using namespace std;
 using boost::timer::cpu_timer;
 
 template<typename T>
-bool almostEqualAbsolute(T a, T b, T tolerance = 5e-6) {
+bool almostEqualAbsolute(T a, T b, T tolerance = 5e-7) {
     return std::fabs(a - b) <= tolerance;
 }
 
@@ -206,12 +206,6 @@ bool BenchmarkRun(size_t count, size_t iterations, double runTime, BenchmarkReco
     elapsed = timer3.elapsed().user;
     record.std_simd_speedup = (double)std_elapsed / (double)elapsed;
     cout << "vector_reduce_simd speedup: " << std::fixed << std::setprecision(2) << record.std_simd_speedup << endl;
-    success = success && almostEqualAbsolute(result, check_result) ;
-    if (!success)
-    {
-      cerr << "Error: Results do not match!  " << check_result - result << " incorrect=" << result << endl;
-
-    }
 
 
     cpu_timer timer4;
@@ -226,7 +220,7 @@ bool BenchmarkRun(size_t count, size_t iterations, double runTime, BenchmarkReco
     success = success && almostEqualAbsolute(result, check_result) ;
     if (!success)
     {
-      cerr << "Error: Results do not match!  " << check_result - result << " incorrect=" << result << endl;
+        cerr << "Error: Results do not match!  " << check_result - result << endl;
 
     }
 

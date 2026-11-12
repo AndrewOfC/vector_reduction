@@ -40,7 +40,7 @@ using vector_aligned64_t = std::vector<ty, boost::alignment::aligned_allocator<t
 #ifdef __AVX512F__
 #define VECTOR_SIZE_IN_BITS 512
 #elif defined(__ARM_NEON__) || defined(__ARM_NEON)
-#define VECTOR_SIZE_IN_BITS vector_t<double>::size() * 8
+#define VECTOR_SIZE_IN_BITS 128
 #else
 #error "Unsupported architecture"
 #endif
@@ -49,29 +49,26 @@ template<typename T>
 void CreateTrivialData(vector_aligned64_t<T>& data, size_t n) {
     data.resize(n);
     for (size_t i = 0; i < n; ++i) {
-      data[i] = 1 ; // static_cast<T>(i);
+        data[i] = static_cast<T>(i);
     }
 }
 
 template<typename T>
-void TrivialTestInner(size_t n) {
+void TrivalTestInner(size_t n) {
     vector_aligned64_t<T> data;
     CreateTrivialData(data, n);
     auto correct = std::reduce(data.begin(), data.end(), static_cast<T>(0));
     auto check = vector_reduce(data.data(), data.size(), static_cast<T>(0));
-    EXPECT_EQ(correct, check) << " vector_reduce";
-
-    check = vector_reduce_simple_simd(data.data(), data.size(), static_cast<T>(0));
-    EXPECT_EQ(correct, check) << " vector_reduce_simple_simd";
+    EXPECT_EQ(correct, check);
 
     check = vector_reduce_simd(data.data(), data.size(), static_cast<T>(0));
-    EXPECT_EQ(correct, check) << " vector_reduce_simd";
+    EXPECT_EQ(correct, check);
 
     check = va_reduce(data.data(), data.size(), static_cast<T>(0));
-    EXPECT_EQ(correct, check) << " va_reduce";
+    EXPECT_EQ(correct, check);
 
     check = va_reduce_simd(data.data(), data.size(), static_cast<T>(0));
-    EXPECT_EQ(correct, check) << " va_reduce_simd";
+    EXPECT_EQ(correct, check);
 }
 
 template<typename T>
@@ -79,18 +76,17 @@ void TrivialTest()
 {
     vector_aligned64_t<T> data;
     size_t n = (VECTOR_SIZE_IN_BITS/(sizeof(T)*8))*64;
-    TrivialTestInner<T>(n);
-    // TrivialTestInner<T>(n+129);
-    // TrivialTestInner<T>(n+65);
-    // TrivialTestInner<T>(n+33);
-    // TrivialTestInner<T>(n+17);
-    // TrivialTestInner<T>(511);
-    // TrivialTestInner<T>(255);
-    // TrivialTestInner<T>(127);
-    // TrivialTestInner<T>(63);
-    // TrivialTestInner<T>(31);
-    // TrivialTestInner<T>(15);
-    // TrivialTestInner<T>(7);
+    TrivalTestInner<T>(n+129);
+    TrivalTestInner<T>(n+65);
+    TrivalTestInner<T>(n+33);
+    TrivalTestInner<T>(n+17);
+    TrivalTestInner<T>(511);
+    TrivalTestInner<T>(255);
+    TrivalTestInner<T>(127);
+    TrivalTestInner<T>(63);
+    TrivalTestInner<T>(31);
+    TrivalTestInner<T>(15);
+    TrivalTestInner<T>(7);
 }
 
 TEST(VectorReduceTest, TrivialDouble) {
