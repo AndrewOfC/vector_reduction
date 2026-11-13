@@ -103,6 +103,11 @@ int32_t vector_reduce_int32(const int32_t *src, size_t len, int32_t initial);
  */
 int64_t vector_reduce_int64(const int64_t *src, size_t len, int64_t initial);
 
+double sve_reduce_double(const double *src, size_t len, double initial);
+float sve_reduce_float(const float *src, size_t len, float initial);
+int32_t sve_reduce_int32(const int32_t *src, size_t len, int32_t initial);
+int64_t sve_reduce_int64(const int64_t *src, size_t len, int64_t initial);
+
 #ifdef __cplusplus
 }
 #endif
@@ -183,6 +188,26 @@ inline int32_t vector_reduce(const int32_t *src, size_t len, int32_t initial = 0
  * @return reduced value
  */
 inline int64_t vector_reduce(const int64_t *src, size_t len, int64_t initial = 0)
+{
+    return vector_reduce_int64(src, len, initial);
+}
+
+inline double sve_reduce(const double *src, size_t len, double initial = 0.0 )
+{
+    return vector_reduce_double(src, len, initial);
+}
+
+inline float sve_reduce(const float *src, size_t len, float initial = 0.0 )
+{
+    return vector_reduce_float(src, len, initial);
+}
+
+inline int32_t sve_reduce(const int32_t *src, size_t len, int32_t initial = 0)
+{
+    return vector_reduce_int32(src, len, initial);
+}
+
+inline int64_t sve_reduce(const int64_t *src, size_t len, int64_t initial = 0)
 {
     return vector_reduce_int64(src, len, initial);
 }

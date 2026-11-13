@@ -483,6 +483,19 @@ or masking.
 
 # Notes
 
+# SVE/SVE2
+
+This command produces the available vector length
+in bytes:
+```bash
+cat /proc/sys/abi/sve_default_vector_length
+```
+
+detect compiler feature
+```bash
+echo | gcc -march=armv8.5-a+sve -E -dM - | grep __ARM_FEATURE_SVE
+```
+
 ## Intrinsics vs Inline Assembly
 
 Using pure intrinsics in both AVX and NEON appears to produce better results

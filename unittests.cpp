@@ -59,16 +59,22 @@ void TrivalTestInner(size_t n) {
     CreateTrivialData(data, n);
     auto correct = std::reduce(data.begin(), data.end(), static_cast<T>(0));
     auto check = vector_reduce(data.data(), data.size(), static_cast<T>(0));
-    EXPECT_EQ(correct, check);
+    EXPECT_EQ(correct, check) << "vector_reduce failed";
 
     check = vector_reduce_simd(data.data(), data.size(), static_cast<T>(0));
-    EXPECT_EQ(correct, check);
+    EXPECT_EQ(correct, check) << "vector_reduce_simd failed";
 
     check = va_reduce(data.data(), data.size(), static_cast<T>(0));
-    EXPECT_EQ(correct, check);
+    EXPECT_EQ(correct, check) << "va_reduce failed";
 
     check = va_reduce_simd(data.data(), data.size(), static_cast<T>(0));
-    EXPECT_EQ(correct, check);
+    EXPECT_EQ(correct, check) << "va_reduce_simd() failed" ;
+
+#if defined(__ARM_FEATURE_SVE)
+    check = sve_reduce(data.data(), data.size(), static_cast<T>(0));
+    EXPECT_EQ(correct, check) << "sve_reduce failed";
+#endif
+
 }
 
 template<typename T>

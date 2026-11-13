@@ -52,8 +52,6 @@ int main(int argc, char *argv[])
     size_t upper = 10000 ;
     bool experiment = false ;
     std::string cpu_name = getCpuNameFromProc(), machine_name = "" ;
-
-
     try
     {
         po::options_description desc("Allowed options");
@@ -70,7 +68,7 @@ int main(int argc, char *argv[])
             ("float,f", "run single precision")
             ("int32", "run int32_t")
             ("int64", "run int64_t")
-        ("machine_name", po::value<std::string>(&machine_name)->default_value("unknown"), "machine name for json output")
+        ("machine-name,m", po::value<std::string>(&machine_name)->default_value("unknown"), "machine name for json output")
         ("simple", "run simple data set (0,1,2,3...)");
 
         po::variables_map vm;
@@ -78,6 +76,8 @@ int main(int argc, char *argv[])
         po::notify(vm);
 
         cout << "CPU: " << cpu_name << endl;
+        cout << "sizeof(vector_t<double>) = " << sizeof(vector_t<double>) << " ";
+        cout << "vector_t<double>::size() = " << vector_t<double>::size() << endl ;
 
         if (vm.count("help"))
         {
