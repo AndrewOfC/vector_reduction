@@ -59,7 +59,7 @@ struct BenchmarkRecord {
 
 struct BenchmarkResults {
     BenchmarkResults() = default;
-
+    int simd_size ;
     double time ;
     std::string cpu_name ;
     std::string machine ;
