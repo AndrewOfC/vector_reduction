@@ -52,8 +52,6 @@ int main(int argc, char *argv[])
     size_t upper = 10000 ;
     bool experiment = false ;
     std::string cpu_name = getCpuNameFromProc(), machine_name = "" ;
-
-
     try
     {
         po::options_description desc("Allowed options");
@@ -78,6 +76,8 @@ int main(int argc, char *argv[])
         po::notify(vm);
 
         cout << "CPU: " << cpu_name << endl;
+        cout << "sizeof(vector_t<double>) = " << sizeof(vector_t<double>) << " ";
+        cout << "vector_t<double>::size() = " << vector_t<double>::size() << endl ;
 
         if (vm.count("help"))
         {

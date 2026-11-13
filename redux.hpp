@@ -54,6 +54,7 @@ struct BenchmarkRecord {
     double std_simple_simd_speedup ;
     double std_vararg_speedup ;
     double std_vararg_speedup_simd ;
+    double sve_speedup ;
 };
 
 struct BenchmarkResults {

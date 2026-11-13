@@ -103,9 +103,9 @@ class SVEProfileInt64(VectorProfile):
         super().__init__("SVE", n_registers)
         self.VTYPE = "svint64_t"
         self.DTYPE = "int64_t"
-        self.LOAD =  lambda params: f"svld1_i64(pg, {params})"
-        self.ADD =  lambda params: f"svadd_i64_x(pg, {params})"
-        self.EXTRACT = "svst1_i64" ;
+        self.LOAD =  lambda params: f"svld1_s64(pg, {params})"
+        self.ADD =  lambda params: f"svadd_s64_x(pg, {params})"
+        self.EXTRACT = "svst1_s64" ;
         self.PREAMBLE = """    int64_t final[32] ;
     svbool_t pg = svptrue_b64();
     uint64_t lanes = svcntd();"""
@@ -114,11 +114,11 @@ class SVEProfileInt64(VectorProfile):
 class SVEProfileInt32(VectorProfile):
     def __init__(self, n_registers):
         super().__init__("SVE", n_registers)
-        self.VTYPE = "svint32t"
+        self.VTYPE = "svint32_t"
         self.DTYPE = "int32_t"
-        self.LOAD =  lambda params: f"svld1_i32(pg, {params})"
-        self.ADD =  lambda params: f"svadd_i32_x(pg, {params})"
-        self.EXTRACT = "svst1_i32"
+        self.LOAD =  lambda params: f"svld1_s32(pg, {params})"
+        self.ADD =  lambda params: f"svadd_s32_x(pg, {params})"
+        self.EXTRACT = "svst1_s32"
         self.PREAMBLE = """    int32_t final[32] ;
     svbool_t pg = svptrue_b64();
     uint64_t lanes = svcntd();"""

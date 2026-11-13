@@ -243,10 +243,19 @@ bool BenchmarkRun(size_t count, size_t iterations, double runTime, BenchmarkReco
     elapsed = timer6.elapsed().user ;
     record.std_vararg_speedup_simd = (double)std_elapsed / (double)elapsed;
     cout << "vararg simd speedup:        " << std::fixed << std::setprecision(2) << record.std_vararg_speedup_simd << endl;
+#if defined(__ARM_FEATURE_SVE)
+    cpu_timer timer7 ;
+    for (size_t i = 0; i < iterations; ++i)
+    {
+        result = sve_reduce(data.data(), count, initial);
+    }
+    timer7.stop();
+    elapsed = timer7.elapsed().user ;
+    record.std_vararg_speedup_simd = (double)std_elapsed / (double)elapsed;
+    cout << "sve speedup:                " << std::fixed << std::setprecision(2) << record.std_vararg_speedup_simd << endl;
+#endif
 
     munlock(data.data(), data.size() * sizeof(T));
-
-
     return success ;
 }
 

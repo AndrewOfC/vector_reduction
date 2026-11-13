@@ -30,7 +30,7 @@
      */
     while( len >= {{ n }} * {{ p.STRIDE }} ) {
         {%- for i in range(n) %}
-        {{ p.VTYPE }} r{{"%03d" | format(i)}} = {{ p.LOAD("&src[%s]" | format(i*p.STRIDE)) }} ;
+        {{ p.VTYPE }} r{{"%03d" | format(i)}} = {% if sve %}{{ p.LOAD("&src[%d*lanes]"|format(i)) }}{% else %}{{ p.LOAD("&src[%d]" | format(i*p.STRIDE))}}{% endif %} ;
         {%- endfor %}
 
         {%- for j in steps[loop.index:] %}
@@ -49,7 +49,7 @@
         {% endif %}
         {%  if sve %}
         {{ p.EXTRACT }}(pg, &final[0], r000) ;
-        for (int i = 0; i < lanes; i++)
+        for (uint64_t i = 0; i < lanes; i++)
             initial += final[i] ;
         {%  endif %}
         len -= {{ n }} * {{ p.STRIDE }} ;
