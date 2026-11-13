@@ -23,31 +23,35 @@
  # 
  # SPDX short identifier: MIT
 -#}
-
+{{ p.PREAMBLE }}
 {%- for n in steps %}
     /*
      * 
      */
     while( len >= {{ n }} * {{ p.STRIDE }} ) {
         {%- for i in range(n) %}
-        {{ p.VTYPE }} r{{"%03d" | format(i)}} = {{ p.LOAD }}(&src[{{ i*p.STRIDE }}]);
+        {{ p.VTYPE }} r{{"%03d" | format(i)}} = {{ p.LOAD("&src[%s]" | format(i*p.STRIDE)) }} ;
         {%- endfor %}
 
         {%- for j in steps[loop.index:] %}
         {% for i in range(j) %}
-        r{{"%03d" | format(i)}} = {{ p.ADD }}(r{{"%03d" | format(i)}}, r{{"%03d" | format(i+j)}});
+        r{{"%03d" | format(i)}} = {{ p.ADD ("r%03d, r%03d" | format(i, i+j)) }} ;
         {%- endfor %}
         {%- endfor %}
 
         {% if avx512 -%}
         initial += {{ p.REDUCE }}(r000) ;
         {% endif -%}
-        {% if neon %}
+        {% if neon and not sve %}
         initial += {% for i in range(p.STRIDE) -%}
         {{ p.EXTRACT }}(r000, {{ i }}) {% if not loop.last %}+ {% endif %}
                     {%- endfor %};
         {% endif %}
-
+        {%  if sve %}
+        {{ p.EXTRACT }}(pg, &final[0], r000) ;
+        for (int i = 0; i < lanes; i++)
+            initial += final[i] ;
+        {%  endif %}
         len -= {{ n }} * {{ p.STRIDE }} ;
         src += {{ n }} * {{ p.STRIDE }}  ;
     } // while
