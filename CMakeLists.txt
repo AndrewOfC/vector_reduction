@@ -7,7 +7,17 @@ set(CMAKE_CXX_STANDARD 26)
 find_package(Boost REQUIRED COMPONENTS program_options timer json)
 find_package(GTest REQUIRED)
 
-set(SVE2_FLAGS "-march=armv8.5-a+sve -msve-vector-bits=128")
+
+
+if(EXISTS "/proc/sys/abi/sve_default_vector_length")
+    file(READ "/proc/sys/abi/sve_default_vector_length" SVE_DEFAULT_VECTOR_LENGTH)
+    string(STRIP "${SVE_DEFAULT_VECTOR_LENGTH}" SVE_DEFAULT_VECTOR_LENGTH)
+    math(EXPR SVE_VECTOR_BITS "${SVE_DEFAULT_VECTOR_LENGTH} * 8")
+else()
+    set(SVE_VECTOR_BITS 0)
+endif()
+
+set(SVE2_FLAGS "-march=armv8.5-a+sve -msve-vector-bits=${SVE_VECTOR_BITS}")
 set(AVX_FLAGS "-mavx512f -mavx512vl -mavx512bw -mavx512dq -mavx512cd -funroll-loops --param max-unrolled-insns=500")
 
 set(__SAVE_C_FLAGS "${CMAKE_C_FLAGS}")
