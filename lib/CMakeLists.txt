@@ -12,6 +12,16 @@ set(LIB_FILES
     vector_reduce_varargs_simd.cpp
 )
 
+if(IS_SVE2)
+set(LIB_FILES ${LIB_FILES}
+        sve_reduce_double.c
+        sve_reduce_float.c
+        sve_reduce_int32.c
+        sve_reduce_int32.c
+        sve_support.h
+)
+endif ()
+
 add_library(vector_reduce ${LIB_FILES})
 
 install(TARGETS vector_reduce LIBRARY DESTINATION lib)

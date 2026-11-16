@@ -27,17 +27,18 @@ import sys
 
 from jinja2 import FileSystemLoader, Environment
 
-from profiles import NEONTypes, AVX512Types, RenderTypes
+from profiles import NEONTypes, AVX512Types, RenderTypes, SVETypes
 
 def main():
 
     base = os.path.abspath(os.path.dirname(__file__))
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-o", "--output_dir", default="..", help="Output directory")
+    parser.add_argument("-o", "--output_dir", default="../lib", help="Output directory")
     parser.add_argument("-n", type=int, default=32)
     parser.add_argument("-v", "--verbose", action="store_true")
     parser.add_argument("--root-template", default="root.jinja2", help="Root template file")
+    parser.add_argument("--sve-root-template", default="sveroot.jinja2", help="Root template file")
     parser.add_argument("--intrinsics-template", default="intrinsics.jinja2", help="Template file for vectorization")
     args = parser.parse_args()
 
@@ -53,6 +54,9 @@ def main():
     while i >= 1:
         steps.append(i)
         i //= 2
+
+    # basic intrinsics for neon and avx
+    template = env.get_template(args.root_template)
 
     for dtype in RenderTypes:
         neon_profile = NEONTypes[dtype](args.n)
@@ -70,6 +74,26 @@ def main():
         if args.verbose:
             print(text)
         outs.write(text)
+
+    # sve
+
+    template = env.get_template(args.sve_root_template)
+    for dtype in RenderTypes:
+        neon_profile = SVETypes[dtype](args.n)
+        filename = f"sve_reduce_{dtype.replace('_t','')}.c"
+        path = os.path.join(args.output_dir, filename)
+        outs = open(path, "w")
+
+        text = template.render(n=args.n,
+                               DTYPE=dtype,
+                               intrinsics_template=args.intrinsics_template,
+                               steps=steps,
+                               sve=True,
+                               neon_profile=neon_profile)
+        if args.verbose:
+            print(text)
+        outs.write(text)
+
 
     #experimental simd
 
