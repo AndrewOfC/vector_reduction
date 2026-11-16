@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 26)
 find_package(Boost REQUIRED COMPONENTS program_options timer json)
 find_package(GTest REQUIRED)
 
-set(SVE2_FLAGS "-march=armv8.5-a+sve -msve-vector-bits=256")
+set(SVE2_FLAGS "-march=armv8.5-a+sve -msve-vector-bits=128")
 set(AVX_FLAGS "-mavx512f -mavx512vl -mavx512bw -mavx512dq -mavx512cd -funroll-loops --param max-unrolled-insns=500")
 
 set(__SAVE_C_FLAGS "${CMAKE_C_FLAGS}")
