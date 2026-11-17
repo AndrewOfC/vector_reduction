@@ -23,7 +23,7 @@
  # 
  # SPDX short identifier: MIT
 -#}
-{{ p.PREAMBLE }}
+{{ p.preamble() -}}
 {%- for n in steps %}
     /*
      * 
@@ -38,24 +38,24 @@
         r{{"%03d" | format(i)}} = {{ p.ADD ("r%03d, r%03d" | format(i, i+j)) }} ;
         {%- endfor %}
         {%- endfor %}
-
-        {% if avx512 -%}
-        initial += {{ p.REDUCE }}(r000) ;
-        {% endif -%}
-        {% if neon and not sve %}
-        initial += {% for i in range(p.STRIDE) -%}
-        {{ p.EXTRACT }}(r000, {{ i }}) {% if not loop.last %}+ {% endif %}
-                    {%- endfor %};
-        {% endif %}
-        {%  if sve %}
-        {{ p.EXTRACT }}(pg, &final[0], r000) ;
-        for (uint64_t i = 0; i < lanes; i++)
-            initial += final[i] ;
-        {%  endif %}
+        vaccumulate += r000 ;
         len -= {{ n }} * {{ p.STRIDE }} ;
         src += {{ n }} * {{ p.STRIDE }}  ;
     } // while
 {%- endfor %}
+    {% if avx512 -%}
+    initial += {{ p.REDUCE }}(vaccumulate) ;
+    {% endif -%}
+    {% if neon and not sve %}
+    initial += {% for i in range(p.STRIDE) -%}
+    {{ p.EXTRACT }}(vaccumulate, {{ i }}) {% if not loop.last %}+ {% endif %}
+                {%- endfor %};
+    {% endif %}
+    {%  if sve %}
+    {{ p.EXTRACT }}(pg, &final[0], vaccumulate) ;
+    for (uint64_t i = 0; i < lanes; i++)
+        initial += final[i] ;
+    {%  endif %}
 
     // clean up on aisle 3
     for( size_t i = 0 ; i < len ; i++, src++ ) {

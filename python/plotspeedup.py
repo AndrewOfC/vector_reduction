@@ -44,17 +44,46 @@ def gatherSamples(data, sample_count_limit, keys, sample_start=100, sample_step=
         next_sample += sample_step
     return x,ys
 
+def plot_comparison(args):
+
+    labels = ("before vector accumulate", "after vector accumulate")
+
+    speedup, ax = plt.subplots()
+
+    ax.set(xlabel="Sample Count",
+           ylabel="Speedup",
+           title=f"Speedup vs Simple Implementation")
+
+    for i, f in enumerate(args.file):
+        data = json.load(open(f))
+        machine = data.get("machine", "Unknown Machine")
+
+        keys = ("std_simd_speedup",)
+        x,ys = gatherSamples(data, args.sample_count_limit, keys)
+
+        y = [ys[j][0] for j in range(len(x))]
+        plt.plot(x, y, label=labels[i])
+
+    plt.legend()
+    plt.show()
+
+
+    return
+
 def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("file", nargs="+", help="profile json file")
     parser.add_argument("-r", "--render", action="store_true", help="Render the plot")
     parser.add_argument("--sample-count-limit", type=int, default=7000, help="Sample count limit")
+    parser.add_argument("--plot-compare", action="store_true", help="Plot comparison")
     args = parser.parse_args()
 
+    if args.plot_compare:
+        plot_comparison(args)
+        return
+
     for file in args.file:
-
-
         data = json.load(open(file))
         machine = data.get("machine", "Unknown Machine")
 

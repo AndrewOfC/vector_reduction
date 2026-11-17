@@ -40,6 +40,8 @@
 double vector_reduce_double(const double *src, size_t len, double initial /* = 0 */)
 {
 #if defined(__AVX512F__)
+    __m512d vaccumulate = _mm512_setzero_pd() ;
+
     /*
      * 
      */
@@ -112,10 +114,7 @@ double vector_reduce_double(const double *src, size_t len, double initial /* = 0
         r001 = _mm512_add_pd(r001, r003) ;
         
         r000 = _mm512_add_pd(r000, r001) ;
-
-        initial += _mm512_reduce_add_pd(r000) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 32 * 8 ;
         src += 32 * 8  ;
     } // while
@@ -158,10 +157,7 @@ double vector_reduce_double(const double *src, size_t len, double initial /* = 0
         r001 = _mm512_add_pd(r001, r003) ;
         
         r000 = _mm512_add_pd(r000, r001) ;
-
-        initial += _mm512_reduce_add_pd(r000) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 16 * 8 ;
         src += 16 * 8  ;
     } // while
@@ -187,10 +183,7 @@ double vector_reduce_double(const double *src, size_t len, double initial /* = 0
         r001 = _mm512_add_pd(r001, r003) ;
         
         r000 = _mm512_add_pd(r000, r001) ;
-
-        initial += _mm512_reduce_add_pd(r000) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 8 * 8 ;
         src += 8 * 8  ;
     } // while
@@ -207,10 +200,7 @@ double vector_reduce_double(const double *src, size_t len, double initial /* = 0
         r001 = _mm512_add_pd(r001, r003) ;
         
         r000 = _mm512_add_pd(r000, r001) ;
-
-        initial += _mm512_reduce_add_pd(r000) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 4 * 8 ;
         src += 4 * 8  ;
     } // while
@@ -222,10 +212,7 @@ double vector_reduce_double(const double *src, size_t len, double initial /* = 0
         __m512d r001 = _mm512_load_pd(&src[8]) ;
         
         r000 = _mm512_add_pd(r000, r001) ;
-
-        initial += _mm512_reduce_add_pd(r000) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 2 * 8 ;
         src += 2 * 8  ;
     } // while
@@ -234,13 +221,13 @@ double vector_reduce_double(const double *src, size_t len, double initial /* = 0
      */
     while( len >= 1 * 8 ) {
         __m512d r000 = _mm512_load_pd(&src[0]) ;
-
-        initial += _mm512_reduce_add_pd(r000) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 1 * 8 ;
         src += 1 * 8  ;
     } // while
+    initial += _mm512_reduce_add_pd(vaccumulate) ;
+    
+    
 
     // clean up on aisle 3
     for( size_t i = 0 ; i < len ; i++, src++ ) {
@@ -249,6 +236,8 @@ double vector_reduce_double(const double *src, size_t len, double initial /* = 0
 
     return initial ;
 #elif defined(__ARM_NEON__) || defined(__ARM_NEON)
+    float64x2_t vaccumulate = vdupq_n_f64(0.0) ;
+
     /*
      * 
      */
@@ -321,11 +310,7 @@ double vector_reduce_double(const double *src, size_t len, double initial /* = 0
         r001 = vaddq_f64(r001, r003) ;
         
         r000 = vaddq_f64(r000, r001) ;
-
-        
-        initial += vgetq_lane_f64(r000, 0) + vgetq_lane_f64(r000, 1) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 32 * 2 ;
         src += 32 * 2  ;
     } // while
@@ -368,11 +353,7 @@ double vector_reduce_double(const double *src, size_t len, double initial /* = 0
         r001 = vaddq_f64(r001, r003) ;
         
         r000 = vaddq_f64(r000, r001) ;
-
-        
-        initial += vgetq_lane_f64(r000, 0) + vgetq_lane_f64(r000, 1) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 16 * 2 ;
         src += 16 * 2  ;
     } // while
@@ -398,11 +379,7 @@ double vector_reduce_double(const double *src, size_t len, double initial /* = 0
         r001 = vaddq_f64(r001, r003) ;
         
         r000 = vaddq_f64(r000, r001) ;
-
-        
-        initial += vgetq_lane_f64(r000, 0) + vgetq_lane_f64(r000, 1) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 8 * 2 ;
         src += 8 * 2  ;
     } // while
@@ -419,11 +396,7 @@ double vector_reduce_double(const double *src, size_t len, double initial /* = 0
         r001 = vaddq_f64(r001, r003) ;
         
         r000 = vaddq_f64(r000, r001) ;
-
-        
-        initial += vgetq_lane_f64(r000, 0) + vgetq_lane_f64(r000, 1) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 4 * 2 ;
         src += 4 * 2  ;
     } // while
@@ -435,11 +408,7 @@ double vector_reduce_double(const double *src, size_t len, double initial /* = 0
         float64x2_t r001 = vld1q_f64(&src[2]) ;
         
         r000 = vaddq_f64(r000, r001) ;
-
-        
-        initial += vgetq_lane_f64(r000, 0) + vgetq_lane_f64(r000, 1) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 2 * 2 ;
         src += 2 * 2  ;
     } // while
@@ -448,14 +417,14 @@ double vector_reduce_double(const double *src, size_t len, double initial /* = 0
      */
     while( len >= 1 * 2 ) {
         float64x2_t r000 = vld1q_f64(&src[0]) ;
-
-        
-        initial += vgetq_lane_f64(r000, 0) + vgetq_lane_f64(r000, 1) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 1 * 2 ;
         src += 1 * 2  ;
     } // while
+    
+    initial += vgetq_lane_f64(vaccumulate, 0) + vgetq_lane_f64(vaccumulate, 1) ;
+    
+    
 
     // clean up on aisle 3
     for( size_t i = 0 ; i < len ; i++, src++ ) {
