@@ -36,7 +36,9 @@
 #endif
 
 double sve_reduce_double(const double *src, size_t len, double initial /* = 0 */)
-{    double final[32] ;
+{
+    svfloat64_t vaccumulate = svdup_f64(0.0) ;
+    double final[32] ;
     svbool_t pg = svptrue_b64();
     uint64_t lanes = svcntd();
     /*
@@ -111,13 +113,7 @@ double sve_reduce_double(const double *src, size_t len, double initial /* = 0 */
         r001 = svadd_f64_x(pg, r001, r003) ;
         
         r000 = svadd_f64_x(pg, r000, r001) ;
-
-        
-        
-        svst1_f64(pg, &final[0], r000) ;
-        for (uint64_t i = 0; i < lanes; i++)
-            initial += final[i] ;
-        
+        vaccumulate += r000 ;
         len -= 32 * lanes ;
         src += 32 * lanes  ;
     } // while
@@ -160,13 +156,7 @@ double sve_reduce_double(const double *src, size_t len, double initial /* = 0 */
         r001 = svadd_f64_x(pg, r001, r003) ;
         
         r000 = svadd_f64_x(pg, r000, r001) ;
-
-        
-        
-        svst1_f64(pg, &final[0], r000) ;
-        for (uint64_t i = 0; i < lanes; i++)
-            initial += final[i] ;
-        
+        vaccumulate += r000 ;
         len -= 16 * lanes ;
         src += 16 * lanes  ;
     } // while
@@ -192,13 +182,7 @@ double sve_reduce_double(const double *src, size_t len, double initial /* = 0 */
         r001 = svadd_f64_x(pg, r001, r003) ;
         
         r000 = svadd_f64_x(pg, r000, r001) ;
-
-        
-        
-        svst1_f64(pg, &final[0], r000) ;
-        for (uint64_t i = 0; i < lanes; i++)
-            initial += final[i] ;
-        
+        vaccumulate += r000 ;
         len -= 8 * lanes ;
         src += 8 * lanes  ;
     } // while
@@ -215,13 +199,7 @@ double sve_reduce_double(const double *src, size_t len, double initial /* = 0 */
         r001 = svadd_f64_x(pg, r001, r003) ;
         
         r000 = svadd_f64_x(pg, r000, r001) ;
-
-        
-        
-        svst1_f64(pg, &final[0], r000) ;
-        for (uint64_t i = 0; i < lanes; i++)
-            initial += final[i] ;
-        
+        vaccumulate += r000 ;
         len -= 4 * lanes ;
         src += 4 * lanes  ;
     } // while
@@ -233,13 +211,7 @@ double sve_reduce_double(const double *src, size_t len, double initial /* = 0 */
         svfloat64_t r001 = svld1_f64(pg, &src[1*lanes]) ;
         
         r000 = svadd_f64_x(pg, r000, r001) ;
-
-        
-        
-        svst1_f64(pg, &final[0], r000) ;
-        for (uint64_t i = 0; i < lanes; i++)
-            initial += final[i] ;
-        
+        vaccumulate += r000 ;
         len -= 2 * lanes ;
         src += 2 * lanes  ;
     } // while
@@ -248,16 +220,16 @@ double sve_reduce_double(const double *src, size_t len, double initial /* = 0 */
      */
     while( len >= 1 * lanes ) {
         svfloat64_t r000 = svld1_f64(pg, &src[0*lanes]) ;
-
-        
-        
-        svst1_f64(pg, &final[0], r000) ;
-        for (uint64_t i = 0; i < lanes; i++)
-            initial += final[i] ;
-        
+        vaccumulate += r000 ;
         len -= 1 * lanes ;
         src += 1 * lanes  ;
     } // while
+    
+    
+    svst1_f64(pg, &final[0], vaccumulate) ;
+    for (uint64_t i = 0; i < lanes; i++)
+        initial += final[i] ;
+    
 
     // clean up on aisle 3
     for( size_t i = 0 ; i < len ; i++, src++ ) {

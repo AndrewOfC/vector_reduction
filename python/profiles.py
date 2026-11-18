@@ -26,14 +26,25 @@ from ctypes import sizeof, c_double, c_float, c_byte, c_int8, c_int16, c_int32, 
 
 
 class VectorProfile(object):
+
+    INIT = "0"
+
     def __init__(self, name, n_registers=32):
         self.name = name
         self._n_registers = n_registers
-        self.PREAMBLE = ""
-    n_registers = property(lambda self: self._n_registers)
 
+    
+    n_registers = property(lambda self: self._n_registers)
+    
+    def preamble(self):
+        return f"    {self.vtype} vaccumulate = {self.INIT} ;\n"
+    def _vtype(self):
+        return self.VTYPE
+    vtype = property(_vtype)
 
 class NEONProfileDouble(VectorProfile):
+    INIT = "vdupq_n_f64(0.0)"
+
     def __init__(self, n_registers):
         super().__init__("NEON", n_registers=n_registers)
         self.VTYPE = "float64x2_t"
@@ -43,6 +54,8 @@ class NEONProfileDouble(VectorProfile):
         self.STRIDE = 128//(sizeof(c_double)*8)
 
 class NEONProfileFloat(VectorProfile):
+    INIT = "vdupq_n_f32(0.0)"
+
     def __init__(self, n_registers):
         super().__init__("NEON", n_registers=n_registers)
         self.VTYPE = "float32x4_t"
@@ -52,6 +65,7 @@ class NEONProfileFloat(VectorProfile):
         self.STRIDE = 128//(sizeof(c_float)*8)
 
 class NEONProfileInt32(VectorProfile):
+    INIT = "vdupq_n_s32(0.0)"
     def __init__(self, n_registers):
         super().__init__("NEON", n_registers=n_registers)
         self.VTYPE = "int32x4_t"
@@ -62,6 +76,9 @@ class NEONProfileInt32(VectorProfile):
 
 
 class NEONProfileInt64(VectorProfile):
+
+    INIT = "vdupq_n_s64(0.0)" ;
+
     def __init__(self, n_registers):
         super().__init__("NEON", n_registers=n_registers)
         self.VTYPE = "int64x2_t"
@@ -72,7 +89,20 @@ class NEONProfileInt64(VectorProfile):
         self.STRIDE = 128 // (sizeof(c_int64) * 8)
         self.filename = "vector_reduce_int64.c"
 
-class SVEProfileDouble(VectorProfile):
+class SVEBase(VectorProfile):
+    def __init__(self, name, n_registers):
+        super().__init__(name, n_registers)
+        self.STRIDE = "lanes"
+
+    def preamble(self):
+        return super().preamble() + f"""    {self.DTYPE} final[32] ;
+    svbool_t pg = svptrue_b64();
+    uint64_t lanes = svcntd();"""
+
+class SVEProfileDouble(SVEBase):
+
+    INIT= "svdup_f64(0.0)"
+
     def __init__(self, n_registers):
         super().__init__("SVE", n_registers)
         self.VTYPE = "svfloat64_t"
@@ -80,12 +110,15 @@ class SVEProfileDouble(VectorProfile):
         self.LOAD =  lambda params: f"svld1_f64(pg, {params})"
         self.ADD =  lambda params: f"svadd_f64_x(pg, {params})"
         self.EXTRACT = "svst1_f64"
-        self.PREAMBLE = """    double final[32] ;
+        self.PREAMBLE = self.preamble() + """    double final[32] ;
     svbool_t pg = svptrue_b64();
     uint64_t lanes = svcntd();"""
         self.STRIDE = "lanes"
 
-class SVEProfileFloat(VectorProfile):
+
+
+class SVEProfileFloat(SVEBase):
+    INIT = "svdup_f32(0.0)"
     def __init__(self, n_registers):
         super().__init__("SVE", n_registers)
         self.VTYPE = "svfloat32_t"
@@ -93,12 +126,13 @@ class SVEProfileFloat(VectorProfile):
         self.LOAD =  lambda params: f"svld1_f32(pg, {params})"
         self.ADD =  lambda params: f"svadd_f32_x(pg, {params})"
         self.EXTRACT = "svst1_f32"
-        self.PREAMBLE = """    float final[32] ;
+        self.PREAMBLE = self.preamble() + """    float final[32] ;
     svbool_t pg = svptrue_b64();
     uint64_t lanes = svcntd();"""
-        self.STRIDE = "lanes"
 
-class SVEProfileInt64(VectorProfile):
+class SVEProfileInt64(SVEBase):
+    INIT = "svdup_s64(0.0)"
+
     def __init__(self, n_registers):
         super().__init__("SVE", n_registers)
         self.VTYPE = "svint64_t"
@@ -106,12 +140,11 @@ class SVEProfileInt64(VectorProfile):
         self.LOAD =  lambda params: f"svld1_s64(pg, {params})"
         self.ADD =  lambda params: f"svadd_s64_x(pg, {params})"
         self.EXTRACT = "svst1_s64" ;
-        self.PREAMBLE = """    int64_t final[32] ;
-    svbool_t pg = svptrue_b64();
-    uint64_t lanes = svcntd();"""
-        self.STRIDE = "lanes"
 
-class SVEProfileInt32(VectorProfile):
+
+class SVEProfileInt32(SVEBase):
+    INIT = "svdup_s32(0.0)"
+
     def __init__(self, n_registers):
         super().__init__("SVE", n_registers)
         self.VTYPE = "svint32_t"
@@ -119,12 +152,15 @@ class SVEProfileInt32(VectorProfile):
         self.LOAD =  lambda params: f"svld1_s32(pg, {params})"
         self.ADD =  lambda params: f"svadd_s32_x(pg, {params})"
         self.EXTRACT = "svst1_s32"
-        self.PREAMBLE = """    int32_t final[32] ;
+        self.PREAMBLE = self.preamble() + """    int32_t final[32] ;
     svbool_t pg = svptrue_b64();
     uint64_t lanes = svcntd();"""
         self.STRIDE = "lanes"
 
 class AVX512ProfileDouble(VectorProfile):
+
+    INIT = "_mm512_setzero_pd()"
+
     def __init__(self, n_registers):
         super().__init__("AVX512 Double", n_registers=n_registers)
         self.VTYPE = "__m512d"
@@ -134,8 +170,11 @@ class AVX512ProfileDouble(VectorProfile):
         self.STRIDE = 512//(sizeof(c_double)*8)
 
 class AVX512ProfileFloat(VectorProfile):
+
+    INIT = "_mm512_setzero_ps()"
+
     def __init__(self, n_registers):
-        super().__init__("AVX512 Double", n_registers=n_registers)
+        super().__init__("AVX512 fLOAT", n_registers=n_registers)
         self.VTYPE = "__m512"
         self.LOAD =  lambda params: f"_mm512_load_ps({params})"
         self.ADD =  lambda params: f"_mm512_add_ps({params})"
@@ -161,6 +200,8 @@ class AVX512ProfileInt16(VectorProfile):
         self.STRIDE = 512 // (sizeof(c_int16) * 8)
 
 class AVX512ProfileInt32(VectorProfile):
+    INIT = "_mm512_setzero_si512()"
+
     def __init__(self, n_registers):
         super().__init__("AVX512 Double", n_registers=n_registers)
         self.VTYPE = "__m512i"
@@ -170,6 +211,7 @@ class AVX512ProfileInt32(VectorProfile):
         self.STRIDE = 512 // (sizeof(c_int32) * 8)
 
 class AVX512ProfileInt64(VectorProfile):
+    INIT = "_mm512_setzero_si512()"
     def __init__(self, n_registers):
         super().__init__("AVX512 Double", n_registers=n_registers)
         self.VTYPE = "__m512i"

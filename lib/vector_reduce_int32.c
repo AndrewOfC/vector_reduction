@@ -40,6 +40,8 @@
 int32_t vector_reduce_int32(const int32_t *src, size_t len, int32_t initial /* = 0 */)
 {
 #if defined(__AVX512F__)
+    __m512i vaccumulate = _mm512_setzero_si512() ;
+
     /*
      * 
      */
@@ -112,10 +114,7 @@ int32_t vector_reduce_int32(const int32_t *src, size_t len, int32_t initial /* =
         r001 = _mm512_add_epi32(r001, r003) ;
         
         r000 = _mm512_add_epi32(r000, r001) ;
-
-        initial += _mm512_reduce_add_epi32(r000) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 32 * 16 ;
         src += 32 * 16  ;
     } // while
@@ -158,10 +157,7 @@ int32_t vector_reduce_int32(const int32_t *src, size_t len, int32_t initial /* =
         r001 = _mm512_add_epi32(r001, r003) ;
         
         r000 = _mm512_add_epi32(r000, r001) ;
-
-        initial += _mm512_reduce_add_epi32(r000) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 16 * 16 ;
         src += 16 * 16  ;
     } // while
@@ -187,10 +183,7 @@ int32_t vector_reduce_int32(const int32_t *src, size_t len, int32_t initial /* =
         r001 = _mm512_add_epi32(r001, r003) ;
         
         r000 = _mm512_add_epi32(r000, r001) ;
-
-        initial += _mm512_reduce_add_epi32(r000) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 8 * 16 ;
         src += 8 * 16  ;
     } // while
@@ -207,10 +200,7 @@ int32_t vector_reduce_int32(const int32_t *src, size_t len, int32_t initial /* =
         r001 = _mm512_add_epi32(r001, r003) ;
         
         r000 = _mm512_add_epi32(r000, r001) ;
-
-        initial += _mm512_reduce_add_epi32(r000) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 4 * 16 ;
         src += 4 * 16  ;
     } // while
@@ -222,10 +212,7 @@ int32_t vector_reduce_int32(const int32_t *src, size_t len, int32_t initial /* =
         __m512i r001 = _mm512_load_epi32(&src[16]) ;
         
         r000 = _mm512_add_epi32(r000, r001) ;
-
-        initial += _mm512_reduce_add_epi32(r000) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 2 * 16 ;
         src += 2 * 16  ;
     } // while
@@ -234,13 +221,13 @@ int32_t vector_reduce_int32(const int32_t *src, size_t len, int32_t initial /* =
      */
     while( len >= 1 * 16 ) {
         __m512i r000 = _mm512_load_epi32(&src[0]) ;
-
-        initial += _mm512_reduce_add_epi32(r000) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 1 * 16 ;
         src += 1 * 16  ;
     } // while
+    initial += _mm512_reduce_add_epi32(vaccumulate) ;
+    
+    
 
     // clean up on aisle 3
     for( size_t i = 0 ; i < len ; i++, src++ ) {
@@ -249,6 +236,8 @@ int32_t vector_reduce_int32(const int32_t *src, size_t len, int32_t initial /* =
 
     return initial ;
 #elif defined(__ARM_NEON__) || defined(__ARM_NEON)
+    int32x4_t vaccumulate = vdupq_n_s32(0.0) ;
+
     /*
      * 
      */
@@ -321,11 +310,7 @@ int32_t vector_reduce_int32(const int32_t *src, size_t len, int32_t initial /* =
         r001 = vaddq_s32(r001, r003) ;
         
         r000 = vaddq_s32(r000, r001) ;
-
-        
-        initial += vgetq_lane_s32(r000, 0) + vgetq_lane_s32(r000, 1) + vgetq_lane_s32(r000, 2) + vgetq_lane_s32(r000, 3) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 32 * 4 ;
         src += 32 * 4  ;
     } // while
@@ -368,11 +353,7 @@ int32_t vector_reduce_int32(const int32_t *src, size_t len, int32_t initial /* =
         r001 = vaddq_s32(r001, r003) ;
         
         r000 = vaddq_s32(r000, r001) ;
-
-        
-        initial += vgetq_lane_s32(r000, 0) + vgetq_lane_s32(r000, 1) + vgetq_lane_s32(r000, 2) + vgetq_lane_s32(r000, 3) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 16 * 4 ;
         src += 16 * 4  ;
     } // while
@@ -398,11 +379,7 @@ int32_t vector_reduce_int32(const int32_t *src, size_t len, int32_t initial /* =
         r001 = vaddq_s32(r001, r003) ;
         
         r000 = vaddq_s32(r000, r001) ;
-
-        
-        initial += vgetq_lane_s32(r000, 0) + vgetq_lane_s32(r000, 1) + vgetq_lane_s32(r000, 2) + vgetq_lane_s32(r000, 3) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 8 * 4 ;
         src += 8 * 4  ;
     } // while
@@ -419,11 +396,7 @@ int32_t vector_reduce_int32(const int32_t *src, size_t len, int32_t initial /* =
         r001 = vaddq_s32(r001, r003) ;
         
         r000 = vaddq_s32(r000, r001) ;
-
-        
-        initial += vgetq_lane_s32(r000, 0) + vgetq_lane_s32(r000, 1) + vgetq_lane_s32(r000, 2) + vgetq_lane_s32(r000, 3) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 4 * 4 ;
         src += 4 * 4  ;
     } // while
@@ -435,11 +408,7 @@ int32_t vector_reduce_int32(const int32_t *src, size_t len, int32_t initial /* =
         int32x4_t r001 = vld1q_s32(&src[4]) ;
         
         r000 = vaddq_s32(r000, r001) ;
-
-        
-        initial += vgetq_lane_s32(r000, 0) + vgetq_lane_s32(r000, 1) + vgetq_lane_s32(r000, 2) + vgetq_lane_s32(r000, 3) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 2 * 4 ;
         src += 2 * 4  ;
     } // while
@@ -448,14 +417,14 @@ int32_t vector_reduce_int32(const int32_t *src, size_t len, int32_t initial /* =
      */
     while( len >= 1 * 4 ) {
         int32x4_t r000 = vld1q_s32(&src[0]) ;
-
-        
-        initial += vgetq_lane_s32(r000, 0) + vgetq_lane_s32(r000, 1) + vgetq_lane_s32(r000, 2) + vgetq_lane_s32(r000, 3) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 1 * 4 ;
         src += 1 * 4  ;
     } // while
+    
+    initial += vgetq_lane_s32(vaccumulate, 0) + vgetq_lane_s32(vaccumulate, 1) + vgetq_lane_s32(vaccumulate, 2) + vgetq_lane_s32(vaccumulate, 3) ;
+    
+    
 
     // clean up on aisle 3
     for( size_t i = 0 ; i < len ; i++, src++ ) {

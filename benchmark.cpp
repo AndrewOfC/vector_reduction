@@ -114,7 +114,9 @@ void tag_invoke(boost::json::value_from_tag, boost::json::value& jv, const Bench
     jv = {
         {"simd_size", std::experimental::native_simd<double>::size()},
         {"cpu_name", results.cpu_name},
+        {"machine", results.machine},
         {"time", results.time},
+        {"datetime", results.datetime},
         {"records", std::move(arr)}
     };
 }
@@ -124,7 +126,7 @@ bool BenchmarkRun(size_t count, size_t iterations, double runTime, BenchmarkReco
 {
     vector_aligned64_t<T> data ;
     filldata(data, count, simple);
-    mlock(data.data(), data.size() * sizeof(T));
+    mlock(data.data(), data.size() * sizeof(T)); // prevent paging to disk for performance testing
     record.type_name = typeid(T).name();
     record.sample_count = count;
     record.iterations = iterations;

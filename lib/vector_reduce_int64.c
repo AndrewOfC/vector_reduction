@@ -40,6 +40,8 @@
 int64_t vector_reduce_int64(const int64_t *src, size_t len, int64_t initial /* = 0 */)
 {
 #if defined(__AVX512F__)
+    __m512i vaccumulate = _mm512_setzero_si512() ;
+
     /*
      * 
      */
@@ -112,10 +114,7 @@ int64_t vector_reduce_int64(const int64_t *src, size_t len, int64_t initial /* =
         r001 = _mm512_add_epi64(r001, r003) ;
         
         r000 = _mm512_add_epi64(r000, r001) ;
-
-        initial += _mm512_reduce_add_epi64(r000) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 32 * 8 ;
         src += 32 * 8  ;
     } // while
@@ -158,10 +157,7 @@ int64_t vector_reduce_int64(const int64_t *src, size_t len, int64_t initial /* =
         r001 = _mm512_add_epi64(r001, r003) ;
         
         r000 = _mm512_add_epi64(r000, r001) ;
-
-        initial += _mm512_reduce_add_epi64(r000) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 16 * 8 ;
         src += 16 * 8  ;
     } // while
@@ -187,10 +183,7 @@ int64_t vector_reduce_int64(const int64_t *src, size_t len, int64_t initial /* =
         r001 = _mm512_add_epi64(r001, r003) ;
         
         r000 = _mm512_add_epi64(r000, r001) ;
-
-        initial += _mm512_reduce_add_epi64(r000) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 8 * 8 ;
         src += 8 * 8  ;
     } // while
@@ -207,10 +200,7 @@ int64_t vector_reduce_int64(const int64_t *src, size_t len, int64_t initial /* =
         r001 = _mm512_add_epi64(r001, r003) ;
         
         r000 = _mm512_add_epi64(r000, r001) ;
-
-        initial += _mm512_reduce_add_epi64(r000) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 4 * 8 ;
         src += 4 * 8  ;
     } // while
@@ -222,10 +212,7 @@ int64_t vector_reduce_int64(const int64_t *src, size_t len, int64_t initial /* =
         __m512i r001 = _mm512_load_epi64(&src[8]) ;
         
         r000 = _mm512_add_epi64(r000, r001) ;
-
-        initial += _mm512_reduce_add_epi64(r000) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 2 * 8 ;
         src += 2 * 8  ;
     } // while
@@ -234,13 +221,13 @@ int64_t vector_reduce_int64(const int64_t *src, size_t len, int64_t initial /* =
      */
     while( len >= 1 * 8 ) {
         __m512i r000 = _mm512_load_epi64(&src[0]) ;
-
-        initial += _mm512_reduce_add_epi64(r000) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 1 * 8 ;
         src += 1 * 8  ;
     } // while
+    initial += _mm512_reduce_add_epi64(vaccumulate) ;
+    
+    
 
     // clean up on aisle 3
     for( size_t i = 0 ; i < len ; i++, src++ ) {
@@ -249,6 +236,8 @@ int64_t vector_reduce_int64(const int64_t *src, size_t len, int64_t initial /* =
 
     return initial ;
 #elif defined(__ARM_NEON__) || defined(__ARM_NEON)
+    int64x2_t vaccumulate = vdupq_n_s64(0.0) ;
+
     /*
      * 
      */
@@ -321,11 +310,7 @@ int64_t vector_reduce_int64(const int64_t *src, size_t len, int64_t initial /* =
         r001 = vaddq_s64(r001, r003) ;
         
         r000 = vaddq_s64(r000, r001) ;
-
-        
-        initial += vgetq_lane_s64(r000, 0) + vgetq_lane_s64(r000, 1) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 32 * 2 ;
         src += 32 * 2  ;
     } // while
@@ -368,11 +353,7 @@ int64_t vector_reduce_int64(const int64_t *src, size_t len, int64_t initial /* =
         r001 = vaddq_s64(r001, r003) ;
         
         r000 = vaddq_s64(r000, r001) ;
-
-        
-        initial += vgetq_lane_s64(r000, 0) + vgetq_lane_s64(r000, 1) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 16 * 2 ;
         src += 16 * 2  ;
     } // while
@@ -398,11 +379,7 @@ int64_t vector_reduce_int64(const int64_t *src, size_t len, int64_t initial /* =
         r001 = vaddq_s64(r001, r003) ;
         
         r000 = vaddq_s64(r000, r001) ;
-
-        
-        initial += vgetq_lane_s64(r000, 0) + vgetq_lane_s64(r000, 1) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 8 * 2 ;
         src += 8 * 2  ;
     } // while
@@ -419,11 +396,7 @@ int64_t vector_reduce_int64(const int64_t *src, size_t len, int64_t initial /* =
         r001 = vaddq_s64(r001, r003) ;
         
         r000 = vaddq_s64(r000, r001) ;
-
-        
-        initial += vgetq_lane_s64(r000, 0) + vgetq_lane_s64(r000, 1) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 4 * 2 ;
         src += 4 * 2  ;
     } // while
@@ -435,11 +408,7 @@ int64_t vector_reduce_int64(const int64_t *src, size_t len, int64_t initial /* =
         int64x2_t r001 = vld1q_s64(&src[2]) ;
         
         r000 = vaddq_s64(r000, r001) ;
-
-        
-        initial += vgetq_lane_s64(r000, 0) + vgetq_lane_s64(r000, 1) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 2 * 2 ;
         src += 2 * 2  ;
     } // while
@@ -448,14 +417,14 @@ int64_t vector_reduce_int64(const int64_t *src, size_t len, int64_t initial /* =
      */
     while( len >= 1 * 2 ) {
         int64x2_t r000 = vld1q_s64(&src[0]) ;
-
-        
-        initial += vgetq_lane_s64(r000, 0) + vgetq_lane_s64(r000, 1) ;
-        
-        
+        vaccumulate += r000 ;
         len -= 1 * 2 ;
         src += 1 * 2  ;
     } // while
+    
+    initial += vgetq_lane_s64(vaccumulate, 0) + vgetq_lane_s64(vaccumulate, 1) ;
+    
+    
 
     // clean up on aisle 3
     for( size_t i = 0 ; i < len ; i++, src++ ) {

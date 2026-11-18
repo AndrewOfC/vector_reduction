@@ -26,6 +26,8 @@
 
 #include "redux.hpp"
 
+#include <chrono>
+#include <format>
 #include <iomanip>
 #include <iostream>
 #include <random>
@@ -51,14 +53,15 @@ int main(int argc, char *argv[])
     size_t step = 100 ;
     size_t upper = 10000 ;
     bool experiment = false ;
-    std::string cpu_name = getCpuNameFromProc(), machine_name = "" ;
+    std::string cpu_name = getCpuNameFromProc(), machine_name = "", json_filename = "tmp.json" ;
     try
     {
         po::options_description desc("Allowed options");
         desc.add_options()
             ("help,h", "produce help message")
+            ("json,j", po::value<std::string>(&json_filename)->default_value("tmp.json"), "output json")
             ("step,s", po::value<size_t>(&step)->default_value(0), "json sample step size")
-            ("upper,u", po::value<size_t>(&upper)->default_value(-1), "json sample upper limit")
+            ("upper,u", po::value<size_t>(&upper)->default_value(0), "json sample upper limit")
             ("experiment,x", "run experiment")
             ("time,t",  po::value<double>(&runTime)->default_value(0.0), "run timing")
             ("COUNT,C", po::value<size_t>(&count256)->default_value(0), "number of 256x elements to reduce")
@@ -112,11 +115,6 @@ int main(int argc, char *argv[])
     const vector sample_counts2 = { count };
     const vector<size_t>& sample_counts = count == 0 ? Sample_counts : sample_counts2;
 
-    if (step == 0)
-    {
-        upper = count ;
-        step = 1 ;
-    }
     if (experiment)
     {
         // do experiments here
@@ -127,9 +125,14 @@ int main(int argc, char *argv[])
     results.time = runTime;
     results.cpu_name = cpu_name;
     results.machine = machine_name ;
+    results.datetime = std::format("{:%FT%TZ}", std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now()));
+
 
 
     for ( size_t sample_count : sample_counts ) {
+        if (upper > 0 && sample_count > upper)
+            break ;
+
         BenchmarkRecord record;
         if ( doDouble)
         {
@@ -152,6 +155,6 @@ int main(int argc, char *argv[])
         }
         results.records.push_back(record);
     } // for
-    save_benchmark_results(results, "tmp.json") ;
+    save_benchmark_results(results, json_filename) ;
     return 0;
 }

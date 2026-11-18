@@ -61,6 +61,7 @@ struct BenchmarkResults {
     BenchmarkResults() = default;
     int simd_size ;
     double time ;
+    std::string datetime ;
     std::string cpu_name ;
     std::string machine ;
     std::vector<BenchmarkRecord> records ;

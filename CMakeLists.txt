@@ -7,8 +7,6 @@ set(CMAKE_CXX_STANDARD 26)
 find_package(Boost REQUIRED COMPONENTS program_options timer json)
 find_package(GTest REQUIRED)
 
-
-
 if(EXISTS "/proc/sys/abi/sve_default_vector_length")
     file(READ "/proc/sys/abi/sve_default_vector_length" SVE_DEFAULT_VECTOR_LENGTH)
     string(STRIP "${SVE_DEFAULT_VECTOR_LENGTH}" SVE_DEFAULT_VECTOR_LENGTH)

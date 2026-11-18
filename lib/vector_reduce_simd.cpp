@@ -36,7 +36,9 @@ int Unfolds = 32 ;
 template<typename T>
 T vector_reduce_simd(const T *src, size_t len, T initial /* = 0 */)
 {
+
     const auto sz = vector_t<T>::size() ;
+    vector_t<T> vaccumulate(0) ;
     /*
      *
      */
@@ -111,7 +113,7 @@ T vector_reduce_simd(const T *src, size_t len, T initial /* = 0 */)
         
         r00 += r01 ;
 
-        initial += stdx::reduce(r00) ;
+        vaccumulate += r00 ;
 
         len -= 32 * sz ;
         src += 32 * sz ;
@@ -157,7 +159,7 @@ T vector_reduce_simd(const T *src, size_t len, T initial /* = 0 */)
         
         r00 += r01 ;
 
-        initial += stdx::reduce(r00) ;
+        vaccumulate += r00 ;
 
         len -= 16 * sz ;
         src += 16 * sz ;
@@ -186,7 +188,7 @@ T vector_reduce_simd(const T *src, size_t len, T initial /* = 0 */)
         
         r00 += r01 ;
 
-        initial += stdx::reduce(r00) ;
+        vaccumulate += r00 ;
 
         len -= 8 * sz ;
         src += 8 * sz ;
@@ -206,7 +208,7 @@ T vector_reduce_simd(const T *src, size_t len, T initial /* = 0 */)
         
         r00 += r01 ;
 
-        initial += stdx::reduce(r00) ;
+        vaccumulate += r00 ;
 
         len -= 4 * sz ;
         src += 4 * sz ;
@@ -221,7 +223,7 @@ T vector_reduce_simd(const T *src, size_t len, T initial /* = 0 */)
         
         r00 += r01 ;
 
-        initial += stdx::reduce(r00) ;
+        vaccumulate += r00 ;
 
         len -= 2 * sz ;
         src += 2 * sz ;
@@ -233,11 +235,12 @@ T vector_reduce_simd(const T *src, size_t len, T initial /* = 0 */)
         vector_t<T> r00 ;
         r00.copy_from(&src[0 * sz], stdx::vector_aligned) ;
 
-        initial += stdx::reduce(r00) ;
+        vaccumulate += r00 ;
 
         len -= 1 * sz ;
         src += 1 * sz ;
     } // while
+    initial += stdx::reduce(vaccumulate) ;
     // clean up on aisle 3
     for( size_t i = 0 ; i < len ; i++, src++ ) {
         initial += *src ;
