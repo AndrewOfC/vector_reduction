@@ -12,6 +12,33 @@ for double precision floating point data with Xeon processors.
 
 ![c8i-double.png](imgs/c8i-double.png)
 
+# Discussion
+With x86 processors supporting AVX-512, we see speedups of 20-25x over a simple 
+loop, even over std::reduce.
+
+Where is the performance coming from?  The simple loop is using a single 
+double precion variable to reduce the enter datast.  The __m512d type is a 
+512-bit vector register, which can hold 8 double precision values.  So each 
+add is adding 8 doubles at once.  
+
+On it's face that gives us a 8x speedup, but we see 20-25x.  The reason is that 
+the compiler is aware of parellism available in the processor and is able to 
+schedule 
+the 
+instructions in 
+parallel.   We take advantage of this by using multiple registers.  
+
+
+Example
+```c
+        r00 += r16 ;
+        r01 += r17 ;
+```
+note that the variables here do not depend on one another.  This allows
+the CPU to execute the instructions in parallel.  The result for r00, can be 
+done simultaneously with the result for r01, the loading of the rXX variables 
+also can occur in parallel with the addtions. In the case of modern compilers, 
+the optimizer is aware of this facility. 
 ![](imgs/reduce.svg)
 
 (Graphic courtesy of https://grok.com)
@@ -79,7 +106,8 @@ intrinsics version.
 supplied in the python code). Since both AVX and NEON have 32 registers.
 However, in both
 the intrinsics implementation and the experimental simd implementation, we are
-only using 16 registers. This is because
+actually only using 16 registers, when you examine the produced machine code. 
+This is because
 the reduction code is compiled with `-mavx512f` and `-mavx512vl`, which enables
 the use of AVX-512 instructions,
 The compiler only uses 16 when we look at the compiled assembly code at the -O3
