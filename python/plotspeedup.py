@@ -77,6 +77,7 @@ def main():
     parser.add_argument("-r", "--render", action="store_true", help="Render the plot")
     parser.add_argument("--sample-count-limit", type=int, default=7000, help="Sample count limit")
     parser.add_argument("--plot-compare", action="store_true", help="Plot comparison")
+    parser.add_argument("--skip-sve", action="store_true", help="Skip SVE")
     args = parser.parse_args()
 
     if args.plot_compare:

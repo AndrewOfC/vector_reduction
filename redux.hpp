@@ -39,10 +39,7 @@
 
 struct BenchmarkRecord {
     BenchmarkRecord() = default;
-    BenchmarkRecord(const BenchmarkRecord& record) : type_name(record.type_name), sample_count(record.sample_count), iterations(record.iterations),
-                                                      std_reduce_speedup(record.std_reduce_speedup), intrinsic_speedup(record.intrinsic_speedup),
-                                                      std_simd_speedup(record.std_simd_speedup), std_simple_simd_speedup(record.std_simple_simd_speedup),
-                                                      std_vararg_speedup(record.std_vararg_speedup), std_vararg_speedup_simd(record.std_vararg_speedup_simd) {}
+    BenchmarkRecord(const BenchmarkRecord& record) = default ;
 
     std::string type_name ;
     size_t sample_count ;
