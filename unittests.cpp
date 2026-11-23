@@ -70,6 +70,9 @@ void TrivalTestInner(size_t n) {
     check = va_reduce_simd(data.data(), data.size(), static_cast<T>(0));
     EXPECT_EQ(correct, check) << "va_reduce_simd() failed" ;
 
+    check = vector_reduce_cpu(data.data(), data.size(), static_cast<T>(0));
+    EXPECT_EQ(correct, check) << "vector_reduce_cpu() failed";
+
 #if defined(__ARM_FEATURE_SVE)
     check = sve_reduce(data.data(), data.size(), static_cast<T>(0));
     EXPECT_EQ(correct, check) << "sve_reduce failed";

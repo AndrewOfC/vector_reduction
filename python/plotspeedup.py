@@ -87,8 +87,8 @@ def main():
         data = json.load(open(file))
         machine = data.get("machine", "Unknown Machine")
 
-        keys = ("std_reduce_speedup", "std_simple_simd_speedup", "std_simd_speedup")
-        labels = ("std::reduce", "Simple SIMD", "Unfolded SIMD")
+        keys = ("std_reduce_speedup", "std_simple_simd_speedup", "std_simd_speedup", "cpu_speedup")
+        labels = ("std::reduce", "Simple SIMD", "Unfolded SIMD", "Unfolded CPU")
         x,ys = gatherSamples(data, args.sample_count_limit, keys)
 
         speedup_std_reduce, ax = plt.subplots()

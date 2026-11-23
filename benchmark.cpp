@@ -85,6 +85,7 @@ void tag_invoke(boost::json::value_from_tag, boost::json::value& jv, const Bench
         {"std_vararg_speedup", record.std_vararg_speedup},
         {"std_vararg_speedup_simd", record.std_vararg_speedup_simd},
         {"sve_speedup", record.sve_speedup},
+        {"cpu_speedup", record.cpu_speedup}
     };
 }
 
@@ -100,6 +101,7 @@ BenchmarkRecord tag_invoke(boost::json::value_to_tag<BenchmarkRecord>, const boo
     record.std_vararg_speedup = boost::json::value_to<double>(jv.at("std_vararg_speedup"));
     record.std_vararg_speedup_simd = boost::json::value_to<double>(jv.at("std_vararg_speedup_simd"));
     record.sve_speedup = boost::json::value_to<double>(jv.at("sve_speedup"));
+    record.cpu_speedup = boost::json::value_to<double>(jv.at("cpu_speedup"));
     return record;
 }
 
@@ -259,6 +261,16 @@ bool BenchmarkRun(size_t count, size_t iterations, double runTime, BenchmarkReco
     record.sve_speedup = (double)std_elapsed / (double)elapsed;
     cout << "sve speedup:                " << std::fixed << std::setprecision(2) << record.sve_speedup << endl;
 #endif
+
+    cpu_timer timer8 ;
+    for (size_t i = 0; i < iterations; ++i)
+    {
+        result = vector_reduce_cpu(data.data(), count, initial);
+    }
+    timer8.stop();
+    elapsed = timer8.elapsed().user ;
+    record.cpu_speedup = (double)std_elapsed / (double)elapsed;
+    cout << "cpu speedup:                " << std::fixed << std::setprecision(2) << record.cpu_speedup << endl;
 
     munlock(data.data(), data.size() * sizeof(T));
     return success ;

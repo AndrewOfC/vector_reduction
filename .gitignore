@@ -1,3 +1,5 @@
 /build
 /cmake-build-*
 /vector_reduce_*
+/rpi4b-*
+/tmp*

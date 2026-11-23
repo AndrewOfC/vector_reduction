@@ -223,6 +223,16 @@ inline int64_t sve_reduce(const int64_t *src, size_t len, int64_t initial = 0)
 template<typename T>
 T vector_reduce_simd(const T *src, size_t len, T initial = 0) ;
 
+/**
+ * @brief perform a reduction of an array using plain CPU operations
+ * @tparam T
+ * @param src
+ * @param len
+ * @param initial
+ * @return
+ */
+template<typename T>
+T vector_reduce_cpu(const T *src, size_t len, T initial /* = 0 */) ;
 
 /**
  * ruduction using C++ variadic templates.  This is a simple implementation that

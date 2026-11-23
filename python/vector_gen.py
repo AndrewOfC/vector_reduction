@@ -40,6 +40,7 @@ def main():
     parser.add_argument("--root-template", default="root.jinja2", help="Root template file")
     parser.add_argument("--sve-root-template", default="sveroot.jinja2", help="Root template file")
     parser.add_argument("--intrinsics-template", default="intrinsics.jinja2", help="Template file for vectorization")
+    parser.add_argument("--cpu-template", default="cpureduce.jinja2", help="Template file for cpu reduction")
     args = parser.parse_args()
 
     file_loader = FileSystemLoader(base)
@@ -109,6 +110,17 @@ def main():
             print(text)
         outs = open(path, "w")
         outs.write(text)
+
+    # Vanilla cpu
+
+    path = os.path.join(args.output_dir, "cpu_reduce.cpp")
+    te = env.get_template(args.cpu_template)
+    text = te.render(regs=args.n,steps=steps)
+    if args.verbose:
+        print(text)
+    outs = open(path, "w")
+    outs.write(text)
+
     return
 
 

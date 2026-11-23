@@ -10,6 +10,7 @@ set(LIB_FILES
     vector_reduce_simd.cpp
     vector_reduce_varargs.cpp
     vector_reduce_varargs_simd.cpp
+    cpu_reduce.cpp
 )
 
 if(IS_SVE2)

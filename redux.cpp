@@ -27,7 +27,7 @@
 #include "redux.hpp"
 
 #include <chrono>
-#include <format>
+#include <ctime>
 #include <iomanip>
 #include <iostream>
 #include <random>
@@ -125,7 +125,15 @@ int main(int argc, char *argv[])
     results.time = runTime;
     results.cpu_name = cpu_name;
     results.machine = machine_name ;
-    results.datetime = std::format("{:%FT%TZ}", std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now()));
+    const std::time_t now = std::time(nullptr);
+    const std::tm* utc = std::gmtime(&now);
+    char datetime[21];
+    if (!utc || std::strftime(datetime, sizeof(datetime), "%Y-%m-%dT%H:%M:%SZ", utc) == 0)
+    {
+        cerr << "Error: could not format current UTC time\n";
+        return 1;
+    }
+    results.datetime = datetime;
 
 
 

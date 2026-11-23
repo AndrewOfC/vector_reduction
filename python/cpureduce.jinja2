@@ -1,0 +1,99 @@
+{#
+ # MIT License
+ #
+ # Copyright (c) 2026 Andrew Ellis Page
+ #
+ # Permission is hereby granted, free of charge, to any person obtaining a copy
+ # of this software and associated documentation files (the "Software"), to deal
+ # in the Software without restriction, including without limitation the rights
+ # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ # copies of the Software, and to permit persons to whom the Software is
+ # furnished to do so, subject to the following conditions:
+ #
+ # The above copyright notice and this permission notice shall be included in all
+ # copies or substantial portions of the Software.
+ #
+ # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ # SOFTWARE.
+ #
+ # SPDX short identifier: MIT
+-#}
+/*
+ * MIT License
+ *
+ * Copyright (c) 2026 Andrew Ellis Page
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ * SPDX short identifier: MIT
+ */
+
+
+/*
+ *  GENERATED CODE.  Do not make permanent modifications here.
+ */
+#include "vector_reduce.h"
+namespace stdx = std::experimental;
+
+template<typename T>
+T vector_reduce_cpu(const T *src, size_t len, T initial /* = 0 */)
+{
+    {%- for n in steps %}
+    /*
+     *
+     */
+    while( len >= {{ n }} ) {
+        T {% for i in range(n) %}r{{"%02d" | format(i)}}{% if not loop.last %}, {%endif%}{% endfor %} ;
+
+        {%- for i in range(n) %}
+        r{{ "%02d" | format(i) }} = src[{{i}}] ;
+        {%- endfor %}
+
+        {%- for j in steps[loop.index:] %}
+        {% for i in range(j) %}
+        r{{"%02d" | format(i)}} += r{{"%02d" | format(i+j)}} ;
+        {%- endfor %}
+        {%- endfor %}
+
+        initial += r00 ;
+
+        len -= {{ n }} ;
+        src += {{ n }} ;
+    } // while
+
+
+    {%- endfor %}
+    // clean up on aisle 3
+    for( size_t i = 0 ; i < len ; i++, src++ ) {
+        initial += *src ;
+    }
+
+    return initial ;
+}
+
+template double vector_reduce_cpu<double>(const double *src, size_t len, double initial /* = 0 */) ;
+template float vector_reduce_cpu<float>(const float *src, size_t len, float initial /* = 0 */) ;
+template int64_t vector_reduce_cpu<int64_t>(const int64_t *src, size_t len, int64_t initial /* = 0 */) ;
+template int32_t vector_reduce_cpu<int32_t>(const int32_t *src, size_t len, int32_t initial /* = 0 */) ;
+
