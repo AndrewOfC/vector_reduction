@@ -7,11 +7,24 @@ reduction operations, using python for code generation.
 In this example we produce a vector reduction function that can be used with
 AVX-512 and NEON.
 
-With proper coding techniques we can achieve performances of 20x
+With proper coding techniques we can achieve performances of 25x
 for double precision floating point data with Xeon processors.
+
+## One Example:
 
 ![c8i-double.png](imgs/c8i-double.png)
 
+| Implementation   | Description |
+|---|---|
+| [std::reduce](https://en.cppreference.com/cpp/algorithm/reduce)  | standard library reduction function   |
+| Simple SIMD  | Use of std::experimental::simd in a simple loop   |
+| Unfolded SIMD  | Use of multiple variables (registers) to perform the reduction in parallel   |
+| Unfolded CPU               | Use of multiple variables (registers) to perform the reduction in parallel on the non-vector CPU registers                                                                              |
+
+## Unfolding
+
+This is the practice of separating elements of an algorithm that are not 
+dependent on each other into separate variables. This allows the compiler to schedule the operations in parallel, where possible. 
 ![](imgs/reduce.svg)
 
 (Graphic courtesy of https://grok.com)

@@ -260,6 +260,8 @@ bool BenchmarkRun(size_t count, size_t iterations, double runTime, BenchmarkReco
     elapsed = timer7.elapsed().user ;
     record.sve_speedup = (double)std_elapsed / (double)elapsed;
     cout << "sve speedup:                " << std::fixed << std::setprecision(2) << record.sve_speedup << endl;
+#else
+    record.sve_speedup = 0.0;
 #endif
 
     cpu_timer timer8 ;
